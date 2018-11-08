@@ -24,7 +24,7 @@
  *
  * $Id: Application.java,v 1.9 2009/07/23 18:54:17 qcheng Exp $
  *
- * Portions Copyrighted 2011-2016 ForgeRock AS.
+ * Portions Copyrighted 2011-2017 ForgeRock AS.
  */
 
 package com.sun.identity.authentication.modules.application;

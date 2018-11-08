@@ -77,6 +77,7 @@ public class AgentConfiguration {
     public final static String AGENT_TYPE_OAUTH2 = "OAuth2Client";
     public final static String AGENT_TYPE_2_DOT_2_AGENT = "2.2_Agent";
     public final static String AGENT_TYPE_AGENT_AUTHENTICATOR = "SharedAgent";
+    public static final String AGENT_TYPE_SOAP_STS = "SoapSTSAgent";
     public final static String ATTR_NAME_PWD = "userpassword";
     public final static String ATTR_NAME_FREE_FORM =
         "com.sun.identity.agents.config.freeformproperties";

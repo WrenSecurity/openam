@@ -86,7 +86,7 @@ public class PasswordCredentialsGrantTypeHandler extends GrantTypeHandler {
         final ResourceOwner resourceOwner = resourceOwnerAuthenticator.authenticate(request);
         if (resourceOwner == null) {
             logger.error("Unable to verify user");
-            throw new InvalidGrantException();
+            throw new InvalidGrantException("Resource owner authentication failed");
         }
 
         final Set<String> scope = Utils.splitScope(request.<String>getParameter(SCOPE));

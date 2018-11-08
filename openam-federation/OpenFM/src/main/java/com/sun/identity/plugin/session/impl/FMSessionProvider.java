@@ -29,49 +29,45 @@
 
 package com.sun.identity.plugin.session.impl;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.Cookie;
-import java.util.Map;
-import java.util.HashSet;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.Set;
-import java.util.ResourceBundle;
 import java.security.SecureRandom;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.ResourceBundle;
+import java.util.Set;
 
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.NameCallback;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
-import com.sun.identity.plugin.session.SessionProvider;
-import com.sun.identity.plugin.session.SessionListener;
-import com.sun.identity.plugin.session.SessionException;
+import org.forgerock.guice.core.InjectorHolder;
 
-import com.sun.identity.shared.Constants;
-
-import com.iplanet.sso.SSOTokenManager;
-import com.iplanet.sso.SSOToken;
 import com.iplanet.sso.SSOException;
-import com.iplanet.sso.SSOTokenEvent;
-import com.iplanet.sso.SSOTokenListener;
-
-import com.sun.identity.saml2.common.SAML2Constants;
-import com.sun.identity.shared.locale.Locale;
-import com.sun.identity.shared.encode.CookieUtils;
-import com.sun.identity.shared.debug.Debug;
-
-import com.sun.identity.shared.configuration.SystemPropertiesManager;
-import com.sun.identity.shared.StringUtils;
-import com.sun.identity.saml.common.SAMLConstants;
+import com.iplanet.sso.SSOToken;
+import com.iplanet.sso.SSOTokenManager;
 import com.sun.identity.authentication.AuthContext;
 import com.sun.identity.authentication.service.AMAuthErrorCode;
 import com.sun.identity.authentication.service.AuthUtils;
 import com.sun.identity.authentication.spi.AuthLoginException;
 import com.sun.identity.federation.common.FSUtils;
+import com.sun.identity.plugin.session.SessionException;
+import com.sun.identity.plugin.session.SessionListener;
+import com.sun.identity.plugin.session.SessionProvider;
+import com.sun.identity.saml.common.SAMLConstants;
+import com.sun.identity.saml2.common.SAML2Constants;
+import com.sun.identity.shared.Constants;
+import com.sun.identity.shared.StringUtils;
+import com.sun.identity.shared.configuration.SystemPropertiesManager;
+import com.sun.identity.shared.debug.Debug;
+import com.sun.identity.shared.encode.CookieUtils;
+import com.sun.identity.shared.locale.Locale;
 import com.sun.identity.sm.DNMapper;
+import com.sun.identity.sm.SMSException;
 import com.sun.identity.sm.ServiceSchema;
 import com.sun.identity.sm.ServiceSchemaManager;
-import com.sun.identity.sm.SMSException;
 
 /**
  * Used for creating sessions, and for accessing session
@@ -108,6 +104,8 @@ public class FMSessionProvider implements SessionProvider {
     private static final int SECRET_LENGTH = 20;
     private static Set secretSet = Collections.synchronizedSet(
         new HashSet(1000));
+
+    private final FMSessionNotification sessionNotification = InjectorHolder.getInstance(FMSessionNotification.class);
     
     static {
         String urlRewriteEnabledStr = SystemPropertiesManager.
@@ -613,43 +611,12 @@ public class FMSessionProvider implements SessionProvider {
      *
      * If the provided session does not support listeners, calling this method will throw <code>SessionException</code>.
      *
-     * @param session the session object.
+     * @param session the session object. An {@link SSOToken}.
      * @param listener listener for the session invalidation event.
      * 
      * @throws SessionException if adding the listener caused an error.
      */
     public void addListener(Object session, SessionListener listener) throws SessionException {
-        try {
-            ((SSOToken)session).addSSOTokenListener(new SSOTokenListenerImpl(session, listener));
-        } catch (SSOException se) {
-            throw new SessionException(se);
-        }
-    }
-
-    class SSOTokenListenerImpl implements SSOTokenListener {
-        private Object session = null;
-        private SessionListener listener = null;
-        
-        public SSOTokenListenerImpl(
-            Object session, SessionListener listener
-        ) {
-            this.session = session;
-            this.listener = listener;
-        }
-
-        public void ssoTokenChanged(SSOTokenEvent evt) {
-            int eventType = -1;
-
-            try {
-                eventType = evt.getType();
-            } catch (SSOException se) {
-            }
-            if (eventType==SSOTokenEvent.SSO_TOKEN_IDLE_TIMEOUT ||
-                eventType==SSOTokenEvent.SSO_TOKEN_MAX_TIMEOUT ||
-                eventType==SSOTokenEvent.SSO_TOKEN_DESTROY) {
-
-                listener.sessionInvalidated(session);
-            }
-        }
+        sessionNotification.store((SSOToken) session, listener);
     }
 }

@@ -1,7 +1,7 @@
 <%--
    DO  NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
   
-   Copyright (c) 2011-2013 ForgeRock AS. All rights reserved.
+   Copyright 2011-2017 ForgeRock AS.
   
    The contents of this file are subject to the terms
    of the Common Development and Distribution License
@@ -158,7 +158,7 @@
     </div>
     <div class="footer alt-color">
         <div class="grid_3">
-            <p>Copyright &copy; 208-2013, ForgeRock AS. <br/>All Rights Reserved. Use of this software is subject to the
+            <p>Copyright &copy; 2008-2017, ForgeRock AS. <br/>All Rights Reserved. Use of this software is subject to the
                 terms and conditions of the ForgeRock&trade; License and Subscription Agreement.</p>
         </div>
     </div>

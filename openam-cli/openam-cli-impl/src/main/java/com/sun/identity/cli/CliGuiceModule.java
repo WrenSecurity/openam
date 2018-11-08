@@ -34,6 +34,8 @@ import org.forgerock.openam.shared.guice.CloseableHttpClientProvider;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.assistedinject.FactoryModuleBuilder;
+import com.google.inject.Scopes;
+import com.google.inject.name.Names;
 import com.sun.identity.entitlement.EntitlementConfiguration;
 import com.sun.identity.entitlement.opensso.EntitlementService;
 
@@ -62,6 +64,8 @@ public class CliGuiceModule extends AbstractModule {
 
         bind(SessionCache.class).toInstance(SessionCache.getInstance());
 
-        bind(Client.class).toProvider(CloseableHttpClientProvider.class);
+        bind(Client.class)
+                .annotatedWith(Names.named("LogWriter"))
+                .toProvider(CloseableHttpClientProvider.class).in(Scopes.SINGLETON);
     }
 }

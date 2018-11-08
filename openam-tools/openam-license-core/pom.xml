@@ -13,6 +13,7 @@
  * information: "Portions copyright [year] [name of copyright owner]".
  *
  * Copyright 2014-2016 ForgeRock AS.
+ * Portions Copyright 2018 Wren Security.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
@@ -24,8 +25,8 @@
     </parent>
 
     <!-- Component Definition -->
-    <name>OpenAM License Core</name>
-    <description>OpenAM License Core</description>
+    <name>Wren:AM - License Core</name>
+    <description>Wren:AM License Core</description>
     <artifactId>openam-license-core</artifactId>
     <packaging>jar</packaging>
 

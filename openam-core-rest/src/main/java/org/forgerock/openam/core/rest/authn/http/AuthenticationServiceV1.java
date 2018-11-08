@@ -289,16 +289,24 @@ public class AuthenticationServiceV1 {
      * @throws IOException If there is a problem creating the response.
      */
     private Response createResponse(final JsonValue jsonResponse) throws IOException {
-
         Response response = new Response(Status.OK);
+        setNoCacheHeaders(response);
+        response.setEntity(jsonResponse.getObject());
+        return response;
+    }
 
+
+    /**
+     * Modifies a response by adding cache control headers.
+     *
+     * @param response The response object to change.
+     * @return a response object populated with the entity and no-cache headers.
+     */
+    protected void setNoCacheHeaders(Response response) {
         response.getHeaders().put(CACHE_CONTROL_HEADER_NAME, NO_CACHE_CACHE_CONTROL_HEADER);
         response.getHeaders().put(PRAGMA_HEADER_NAME, PRAGMA_NO_CACHE_HEADER);
         response.getHeaders().put(EXPIRES_HEADER_NAME, ALWAYS_EXPIRE_HEADER);
         response.getHeaders().put(CONTENT_TYPE_HEADER_NAME, "application/json");
-
-        response.setEntity(jsonResponse.getObject());
-        return response;
     }
 
     /**
@@ -335,6 +343,8 @@ public class AuthenticationServiceV1 {
             rep.put("errorMessage", getLocalizedMessage(request, exception));
         }
 
+
+        setNoCacheHeaders(response);
         response.setEntity(rep);
 
         return response;

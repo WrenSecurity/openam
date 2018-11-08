@@ -24,7 +24,7 @@
  *
  * $Id: AttributeValidator.java,v 1.10 2009/11/03 00:06:31 hengming Exp $
  *
- * Portions Copyrighted 2015-2016 ForgeRock AS.
+ * Portions Copyrighted 2015-2017 ForgeRock AS.
  */
 
 package com.sun.identity.sm;

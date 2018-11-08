@@ -24,7 +24,7 @@
  *
  * $Id: IdUtils.java,v 1.34 2009/11/20 23:52:54 ww203982 Exp $
  *
- * Portions Copyrighted 2011-2016 ForgeRock AS.
+ * Portions Copyrighted 2011-2017 ForgeRock AS.
  * Portions Copyrighted 2014 Nomura Research Institute, Ltd
  */
 

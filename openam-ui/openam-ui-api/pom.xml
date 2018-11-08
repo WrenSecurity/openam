@@ -13,6 +13,7 @@
  * information: "Portions copyright [year] [name of copyright owner]".
  *
  * Copyright 2016 ForgeRock AS.
+ * Portions Copyright 2018 Wren Security.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
@@ -23,7 +24,7 @@
     </parent>
 
     <artifactId>openam-ui-api</artifactId>
-    <name>OpenAM API UI</name>
+    <name>Wren:AM - API UI</name>
     <packaging>jar</packaging>
 
     <properties>
@@ -58,10 +59,10 @@
                         </goals>
                         <phase>initialize</phase>
                         <configuration>
-                            <nodeVersion>v4.5.0</nodeVersion>
-                            <npmVersion>3.10.6</npmVersion>
-                            <downloadRoot>http://maven.forgerock.org/repo/forgerock-third-party-virtual/</downloadRoot>
-                            <npmDownloadRoot>http://maven.forgerock.org/repo/api/npm/npm-virtual/npm/-/</npmDownloadRoot>
+                            <nodeVersion>v4.6.2</nodeVersion>
+                            <npmVersion>3.10.9</npmVersion>
+                            <downloadRoot>https://nodejs.org/dist/</downloadRoot>
+                            <npmDownloadRoot>https://wrensecurity.jfrog.io/wrensecurity/api/npm/npm-virtual/npm/-/</npmDownloadRoot>
                         </configuration>
                     </execution>
                     <execution>

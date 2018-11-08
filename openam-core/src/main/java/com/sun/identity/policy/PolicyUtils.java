@@ -24,7 +24,7 @@
  *
  * $Id: PolicyUtils.java,v 1.16 2010/01/13 03:01:15 dillidorai Exp $
  *
- * Portions Copyrighted 2011-2015 ForgeRock AS.
+ * Portions Copyrighted 2011-2017 ForgeRock AS.
  * Portions Copyrighted 2014 Nomura Research Institute, Ltd
  */
 package com.sun.identity.policy;

@@ -12,7 +12,8 @@
  * Header, with the fields enclosed by brackets [] replaced by your own identifying
  * information: "Portions copyright [year] [name of copyright owner]".
  *
- * Copyright 2011-2016 ForgeRock AS.
+ * Copyright 2011-2017 ForgeRock AS.
+ * Portions Copyright 2018 Wren Security.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
@@ -25,8 +26,8 @@
     </parent>
 
     <!-- Component Definition -->
-    <name>OpenAM Core</name>
-    <description>OpenAM Core Components</description>
+    <name>Wren:AM - Core</name>
+    <description>Wren:AM Core Components</description>
     <artifactId>openam-core</artifactId>
     <packaging>jar</packaging>
 
@@ -276,7 +277,7 @@
         </dependency>
 
         <dependency>
-            <groupId>external</groupId>
+            <groupId>com.sun.xml.rpc</groupId>
             <artifactId>jaxrpc-impl</artifactId>
         </dependency>
 
@@ -293,12 +294,6 @@
         <dependency>
             <groupId>com.sun.xml.fastinfoset</groupId>
             <artifactId>FastInfoset</artifactId>
-        </dependency>
-
-
-        <dependency>
-            <groupId>com.sleepycat</groupId>
-            <artifactId>je</artifactId>
         </dependency>
 
         <dependency>
@@ -337,7 +332,7 @@
             <artifactId>jsr305</artifactId>
         </dependency>
 
-        <!-- Legacy External Libraries for OpenAM -->
+        <!-- Legacy External Libraries for Wren:AM -->
         <dependency>
             <groupId>external</groupId>
             <artifactId>jdmkrt</artifactId>

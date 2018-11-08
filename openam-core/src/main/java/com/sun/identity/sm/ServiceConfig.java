@@ -24,7 +24,7 @@
  *
  * $Id: ServiceConfig.java,v 1.18 2009/01/28 05:35:03 ww203982 Exp $
  *
- * Portions Copyrighted 2011-2016 ForgeRock AS.
+ * Portions Copyrighted 2011-2017 ForgeRock AS.
  * Portions Copyrighted 2012 Open Source Solution Technology Corporation
  */
 package com.sun.identity.sm;

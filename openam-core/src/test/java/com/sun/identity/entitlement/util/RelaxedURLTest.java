@@ -11,71 +11,152 @@
  * Header, with the fields enclosed by brackets [] replaced by your own identifying
  * information: "Portions copyright [year] [name of copyright owner]".
  *
- * Copyright 2013-2015 ForgeRock AS.
+ * Copyright 2013-2017 ForgeRock AS.
  */
 
 package com.sun.identity.entitlement.util;
 
-import org.testng.annotations.Test;
+import static org.fest.assertions.Assertions.assertThat;
 
 import java.net.MalformedURLException;
 
-import static org.testng.Assert.assertEquals;
+import org.testng.annotations.Test;
 
 /**
  * Unit test to exercise the RelaxedURL behaviour.
  */
-public class RelaxedURLTest {
+public final class RelaxedURLTest {
 
     @Test
-    public void validateRelaxedURL() throws MalformedURLException {
+    public void whenGivenAFullUrlAllPartsAreParsedAppropriately() throws MalformedURLException {
+        // Given
         RelaxedURL url = new RelaxedURL("http://www.test.com:123/hello?world=456");
-        assertEquals("http", url.getProtocol());
-        assertEquals("www.test.com", url.getHostname());
-        assertEquals("123", url.getPort());
-        assertEquals("/hello", url.getPath());
-        assertEquals("world=456", url.getQuery());
-        assertEquals("http://www.test.com:123/hello?world=456", url.toString());
 
-        url = new RelaxedURL("http://www.test.com/");
-        assertEquals("http", url.getProtocol());
-        assertEquals("www.test.com", url.getHostname());
-        assertEquals("80", url.getPort());
-        assertEquals("/", url.getPath());
-        assertEquals("", url.getQuery());
-        assertEquals("http://www.test.com:80/", url.toString());
+        // Then
+        assertThat(url.getProtocol()).isEqualTo("http");
+        assertThat(url.getHostname()).isEqualTo("www.test.com");
+        assertThat(url.getPort()).isEqualTo("123");
+        assertThat(url.getPath()).isEqualTo("/hello");
+        assertThat(url.getQuery()).isEqualTo("world=456");
+        assertThat(url.toString()).isEqualTo("http://www.test.com:123/hello?world=456");
+    }
 
-        url = new RelaxedURL("https://www.test.com/");
-        assertEquals("https", url.getProtocol());
-        assertEquals("www.test.com", url.getHostname());
-        assertEquals("443", url.getPort());
-        assertEquals("/", url.getPath());
-        assertEquals("", url.getQuery());
-        assertEquals("https://www.test.com:443/", url.toString());
+    @Test
+    public void whenNoProtocolIsGivenRemainsBlank() throws MalformedURLException {
+        // Given
+        RelaxedURL url = new RelaxedURL("://www.test.com:123/hello?world=456");
 
-        url = new RelaxedURL("http://www.test.com/hello/world/");
-        assertEquals("http", url.getProtocol());
-        assertEquals("www.test.com", url.getHostname());
-        assertEquals("80", url.getPort());
-        assertEquals("/hello/world/", url.getPath());
-        assertEquals("", url.getQuery());
-        assertEquals("http://www.test.com:80/hello/world/", url.toString());
+        // Then
+        assertThat(url.getProtocol()).isEmpty();
+        assertThat(url.getHostname()).isEqualTo("www.test.com");
+        assertThat(url.getPort()).isEqualTo("123");
+        assertThat(url.getPath()).isEqualTo("/hello");
+        assertThat(url.getQuery()).isEqualTo("world=456");
+        assertThat(url.toString()).isEqualTo("://www.test.com:123/hello?world=456");
+    }
 
-        url = new RelaxedURL("http://www.test.com/?a=b&c=d&e=f");
-        assertEquals("http", url.getProtocol());
-        assertEquals("www.test.com", url.getHostname());
-        assertEquals("80", url.getPort());
-        assertEquals("/", url.getPath());
-        assertEquals("a=b&c=d&e=f", url.getQuery());
-        assertEquals("http://www.test.com:80/?a=b&c=d&e=f", url.toString());
+    @Test
+    public void whenNoHostIsGivenRemainsBlank() throws MalformedURLException {
+        // Given
+        RelaxedURL url = new RelaxedURL("http://:123/hello?world=456");
 
-        url = new RelaxedURL("HTTP://WWW.TEST.COM/HELLO/WORLD/");
-        assertEquals("HTTP", url.getProtocol());
-        assertEquals("WWW.TEST.COM", url.getHostname());
-        assertEquals("80", url.getPort());
-        assertEquals("/HELLO/WORLD/", url.getPath());
-        assertEquals("", url.getQuery());
-        assertEquals("HTTP://WWW.TEST.COM:80/HELLO/WORLD/", url.toString());
+        // Then
+        assertThat(url.getProtocol()).isEqualTo("http");
+        assertThat(url.getHostname()).isEmpty();
+        assertThat(url.getPort()).isEqualTo("123");
+        assertThat(url.getPath()).isEqualTo("/hello");
+        assertThat(url.getQuery()).isEqualTo("world=456");
+        assertThat(url.toString()).isEqualTo("http://:123/hello?world=456");
+    }
+
+    @Test
+    public void whenNoPortIsGivenForNonTlsPortIsAdded() throws MalformedURLException {
+        // Given
+        RelaxedURL url = new RelaxedURL("http://www.test.com/hello?world=456");
+
+        // Then
+        assertThat(url.getProtocol()).isEqualTo("http");
+        assertThat(url.getHostname()).isEqualTo("www.test.com");
+        assertThat(url.getPort()).isEqualTo("80");
+        assertThat(url.getPath()).isEqualTo("/hello");
+        assertThat(url.getQuery()).isEqualTo("world=456");
+        assertThat(url.toString()).isEqualTo("http://www.test.com:80/hello?world=456");
+    }
+
+    @Test
+    public void whenNoPortIsGivenForTlsPortIsAdded() throws MalformedURLException {
+        // Given
+        RelaxedURL url = new RelaxedURL("https://www.test.com/hello?world=456");
+
+        // Then
+        assertThat(url.getProtocol()).isEqualTo("https");
+        assertThat(url.getHostname()).isEqualTo("www.test.com");
+        assertThat(url.getPort()).isEqualTo("443");
+        assertThat(url.getPath()).isEqualTo("/hello");
+        assertThat(url.getQuery()).isEqualTo("world=456");
+        assertThat(url.toString()).isEqualTo("https://www.test.com:443/hello?world=456");
+    }
+
+    @Test
+    public void whenNoPortIsGivenButProtocolIsUnknownPortRemainsBlank() throws MalformedURLException {
+        // Given
+        RelaxedURL url = new RelaxedURL("abc://www.test.com/hello?world=456");
+
+        // Then
+        assertThat(url.getProtocol()).isEqualTo("abc");
+        assertThat(url.getHostname()).isEqualTo("www.test.com");
+        assertThat(url.getPort()).isEmpty();
+        assertThat(url.getPath()).isEqualTo("/hello");
+        assertThat(url.getQuery()).isEqualTo("world=456");
+        assertThat(url.toString()).isEqualTo("abc://www.test.com/hello?world=456");
+    }
+
+    @Test
+    public void whenNoPathIsGivenDefaultsToRoot() throws MalformedURLException {
+        // Given
+        RelaxedURL url = new RelaxedURL("http://www.test.com:123/?world=456");
+
+        // Then
+        assertThat(url.getProtocol()).isEqualTo("http");
+        assertThat(url.getHostname()).isEqualTo("www.test.com");
+        assertThat(url.getPort()).isEqualTo("123");
+        assertThat(url.getPath()).isEqualTo("/");
+        assertThat(url.getQuery()).isEqualTo("world=456");
+        assertThat(url.toString()).isEqualTo("http://www.test.com:123/?world=456");
+    }
+
+    @Test
+    public void whenNoQueryStringIsGivenRemainsBlank() throws MalformedURLException {
+        // Given
+        RelaxedURL url = new RelaxedURL("http://www.test.com:123/hello");
+
+        // Then
+        assertThat(url.getProtocol()).isEqualTo("http");
+        assertThat(url.getHostname()).isEqualTo("www.test.com");
+        assertThat(url.getPort()).isEqualTo("123");
+        assertThat(url.getPath()).isEqualTo("/hello");
+        assertThat(url.getQuery()).isEmpty();
+        assertThat(url.toString()).isEqualTo("http://www.test.com:123/hello");
+    }
+
+    @Test
+    public void whenAFullWildcardUrlPatternIsGivenAllPartsParsedAppropriately() throws MalformedURLException {
+        // Given
+        RelaxedURL url = new RelaxedURL("*://*:*/*?*");
+
+        // Then
+        assertThat(url.getProtocol()).isEqualTo("*");
+        assertThat(url.getHostname()).isEqualTo("*");
+        assertThat(url.getPort()).isEqualTo("*");
+        assertThat(url.getPath()).isEqualTo("/*");
+        assertThat(url.getQuery()).isEqualTo("*");
+        assertThat(url.toString()).isEqualTo("*://*:*/*?*");
+    }
+
+    @Test(expectedExceptions = MalformedURLException.class)
+    public void whenAMalformedUrlIsGivenExceptionIsThrown() throws MalformedURLException {
+        // Given
+        new RelaxedURL("ab:cd:ef");
     }
 
 }

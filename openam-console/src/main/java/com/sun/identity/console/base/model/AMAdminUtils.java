@@ -24,7 +24,7 @@
  *
  * $Id: AMAdminUtils.java,v 1.9 2009/10/19 18:17:37 asyhuang Exp $
  *
- * Portions Copyrighted 2011-2015 ForgeRock AS.
+ * Portions Copyrighted 2011-2017 ForgeRock AS.
  */
 
 package com.sun.identity.console.base.model;

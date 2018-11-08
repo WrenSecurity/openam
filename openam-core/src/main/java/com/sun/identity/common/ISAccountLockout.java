@@ -24,7 +24,7 @@
  *
  * $Id: ISAccountLockout.java,v 1.15 2009/03/07 08:01:50 veiming Exp $
  *
- * Portions Copyrighted 2011-2016 ForgeRock AS.
+ * Portions Copyrighted 2011-2017 ForgeRock AS.
  */
 package com.sun.identity.common;
 
@@ -38,6 +38,7 @@ import com.sun.identity.authentication.spi.AMAuthCallBackException;
 import com.sun.identity.idm.AMIdentity;
 import com.sun.identity.idm.IdRepoException;
 import com.sun.identity.shared.debug.Debug;
+import com.sun.identity.shared.debug.DebugLevel;
 import com.sun.identity.shared.debug.IDebug;
 import java.text.MessageFormat;
 import java.util.Collections;
@@ -287,7 +288,7 @@ public class ISAccountLockout {
                 // Requesting callback to plugin for account lockout event.
                 callbackImpl.processedAccounttLockout(new Long(now), userName);
             } catch (AMAuthCallBackException e) {
-                if (debug.getState() >= IDebug.ERROR) {
+                if (debug.getState() >= DebugLevel.ERROR.getLevel()) {
                     debug.error("ISAccountLockout invalidPasswd : " +
                         "error getting callback implementation " +
                         "instance or error from callback module", e);

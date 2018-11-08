@@ -11,12 +11,16 @@
  * Header, with the fields enclosed by brackets [] replaced by your own identifying
  * information: "Portions copyright [year] [name of copyright owner]".
  *
- * Copyright 2013-2016 ForgeRock AS.
+ * Copyright 2013-2017 ForgeRock AS.
  */
 
 package org.forgerock.openam.cts.api.fields;
 
-import static org.forgerock.openam.utils.Time.*;
+import static java.util.Collections.singleton;
+import static org.forgerock.openam.utils.Time.getCalendarInstance;
+
+import java.util.Calendar;
+import java.util.Set;
 
 import org.fest.assertions.Assertions;
 import org.fest.assertions.Condition;
@@ -24,8 +28,6 @@ import org.forgerock.openam.cts.api.tokens.Token;
 import org.forgerock.openam.cts.exceptions.CoreTokenException;
 import org.forgerock.openam.tokens.CoreTokenField;
 import org.testng.annotations.Test;
-
-import java.util.Calendar;
 
 public class CoreTokenFieldTypesTest {
     @Test
@@ -79,6 +81,46 @@ public class CoreTokenFieldTypesTest {
     }
 
     @Test
+    public void whenValidMultiStringProvidedValidationPassed() throws CoreTokenException {
+        // Given
+        CoreTokenField key = CoreTokenField.MULTI_STRING_ONE;
+        String value = "abc";
+
+        // When
+        CoreTokenFieldTypes.validateType(key, value);
+    }
+
+    @Test
+    public void whenValidMultiStringSetProvidedValidationPassed() throws CoreTokenException {
+        // Given
+        CoreTokenField key = CoreTokenField.MULTI_STRING_ONE;
+        Set<String> value = singleton("abc");
+
+        // When
+        CoreTokenFieldTypes.validateType(key, value);
+    }
+
+    @Test(expectedExceptions = CoreTokenException.class)
+    public void whenInvalidTypeProvidedForMultiStringFieldThrowException() throws CoreTokenException {
+        // Given
+        CoreTokenField key = CoreTokenField.MULTI_STRING_ONE;
+        Integer value = 1;
+
+        // When
+        CoreTokenFieldTypes.validateType(key, value);
+    }
+
+    @Test(expectedExceptions = CoreTokenException.class)
+    public void whenInvalidTypeProvidedInSetForMultiStringSetFieldThrowException() throws CoreTokenException {
+        // Given
+        CoreTokenField key = CoreTokenField.MULTI_STRING_ONE;
+        Set<?> value = singleton(1);
+
+        // When
+        CoreTokenFieldTypes.validateType(key, value);
+    }
+
+    @Test
     public void shouldEnsureAllFieldTypesHaveAValidationType() {
         for (CoreTokenField field : CoreTokenField.values()) {
             // Ignore read only fields.
@@ -91,7 +133,8 @@ public class CoreTokenFieldTypesTest {
                 public boolean matches(Object t) {
                     CoreTokenField obj = (CoreTokenField) t;
                     return CoreTokenFieldTypes.isByteArray(obj) || CoreTokenFieldTypes.isCalendar(obj)
-                            || CoreTokenFieldTypes.isInteger(obj) || CoreTokenFieldTypes.isString(obj);
+                            || CoreTokenFieldTypes.isInteger(obj) || CoreTokenFieldTypes.isString(obj)
+                            || CoreTokenFieldTypes.isMulti(obj);
                 }
             });
         }

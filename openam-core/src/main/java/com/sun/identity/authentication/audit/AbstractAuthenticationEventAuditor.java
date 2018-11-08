@@ -19,11 +19,13 @@ import static com.sun.identity.authentication.util.ISAuthConstants.SHARED_STATE_
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singleton;
 import static org.forgerock.openam.audit.AuditConstants.NO_REALM;
+import static org.forgerock.openam.audit.AuditConstants.AuthenticationFailureReason.*;
 import static org.forgerock.openam.utils.StringUtils.isNotEmpty;
 
 import com.iplanet.dpro.session.service.InternalSession;
 import com.iplanet.sso.SSOException;
 import com.iplanet.sso.SSOToken;
+import com.sun.identity.authentication.service.AMAuthErrorCode;
 import com.sun.identity.authentication.service.LoginState;
 import com.sun.identity.authentication.util.ISAuthConstants;
 import com.sun.identity.common.DNUtils;
@@ -32,6 +34,7 @@ import com.sun.identity.idm.IdUtils;
 import com.sun.identity.shared.Constants;
 import com.sun.identity.sm.DNMapper;
 
+import org.forgerock.openam.audit.AuditConstants;
 import org.forgerock.openam.audit.AuditEventFactory;
 import org.forgerock.openam.audit.AuditEventPublisher;
 import org.forgerock.openam.utils.CollectionUtils;
@@ -157,5 +160,60 @@ public abstract class AbstractAuthenticationEventAuditor {
             }
         }
         return null;
+    }
+
+    /**
+     * Get the failure reason from the {@Link LoginState} of the event.
+     *
+     * @param loginState The login state of the event.
+     * @return The AuthenticationFailureReason or LOGIN_FAILED if it could not be found.
+     */
+    protected AuditConstants.AuthenticationFailureReason findFailureReason(LoginState loginState) {
+        String errorCode = loginState == null ? null : loginState.getErrorCode();
+
+        if (StringUtils.isEmpty(errorCode)) {
+            return LOGIN_FAILED;
+        }
+
+        switch (errorCode) {
+            case AMAuthErrorCode.AUTH_PROFILE_ERROR:
+                return NO_USER_PROFILE;
+            case AMAuthErrorCode.AUTH_ACCOUNT_EXPIRED:
+                return ACCOUNT_EXPIRED;
+            case AMAuthErrorCode.AUTH_INVALID_PASSWORD:
+                return INVALID_PASSWORD;
+            case AMAuthErrorCode.AUTH_USER_INACTIVE:
+                return USER_INACTIVE;
+            case AMAuthErrorCode.AUTH_CONFIG_NOT_FOUND:
+                return NO_CONFIG;
+            case AMAuthErrorCode.AUTH_INVALID_DOMAIN:
+                return INVALID_REALM;
+            case AMAuthErrorCode.AUTH_ORG_INACTIVE:
+                return REALM_INACTIVE;
+            case AMAuthErrorCode.AUTH_TIMEOUT:
+                return LOGIN_TIMEOUT;
+            case AMAuthErrorCode.AUTH_MODULE_DENIED:
+                return MODULE_DENIED;
+            case AMAuthErrorCode.AUTH_MODULE_NOT_FOUND:
+                return MODULE_NOT_FOUND;
+            case AMAuthErrorCode.AUTH_USER_LOCKED:
+                return LOCKED_OUT;
+            case AMAuthErrorCode.AUTH_USER_NOT_FOUND:
+                return USER_NOT_FOUND;
+            case AMAuthErrorCode.AUTH_TYPE_DENIED:
+                return AUTH_TYPE_DENIED;
+            case AMAuthErrorCode.AUTH_MAX_SESSION_REACHED:
+                return MAX_SESSION_REACHED;
+            case AMAuthErrorCode.AUTH_SESSION_CREATE_ERROR:
+                return SESSION_CREATE_ERROR;
+            case AMAuthErrorCode.INVALID_AUTH_LEVEL:
+                return INVALID_LEVEL;
+            case AMAuthErrorCode.MODULE_BASED_AUTH_NOT_ALLOWED:
+                return MODULE_DENIED;
+            case AMAuthErrorCode.USERID_NOT_FOUND:
+                return USERID_NOT_FOUND;
+            default:
+                return LOGIN_FAILED;
+        }
     }
 }

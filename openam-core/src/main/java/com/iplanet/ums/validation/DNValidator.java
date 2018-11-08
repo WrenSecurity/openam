@@ -24,7 +24,7 @@
  *
  * $Id: DNValidator.java,v 1.4 2009/01/28 05:34:52 ww203982 Exp $
  *
- * Portions Copyright 2015 ForgeRock AS.
+ * Portions Copyright 2015-2017 ForgeRock AS.
  */
 
 package com.iplanet.ums.validation;

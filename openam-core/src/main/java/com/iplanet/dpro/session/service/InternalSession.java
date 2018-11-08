@@ -48,15 +48,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
-import org.forgerock.guice.core.InjectorHolder;
-import org.forgerock.openam.session.AMSession;
-import org.forgerock.openam.session.SessionEventType;
-import org.forgerock.openam.session.service.access.SessionPersistenceManager;
-import org.forgerock.openam.session.service.access.SessionPersistenceObservable;
-import org.forgerock.openam.utils.Time;
-import org.forgerock.util.Reject;
-import org.forgerock.util.annotations.VisibleForTesting;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSetter;
@@ -72,6 +63,21 @@ import com.sun.identity.authentication.server.AuthContextLocal;
 import com.sun.identity.session.util.SessionUtilsWrapper;
 import com.sun.identity.shared.Constants;
 import com.sun.identity.shared.debug.Debug;
+import org.forgerock.guice.core.InjectorHolder;
+import org.forgerock.openam.cts.adapters.SessionAdapter;
+import org.forgerock.openam.cts.api.tokens.Token;
+import org.forgerock.openam.cts.continuous.watching.ContinuousWatcher;
+import org.forgerock.openam.session.AMSession;
+import org.forgerock.openam.session.SessionEventType;
+import org.forgerock.openam.session.service.access.SessionPersistenceManager;
+import org.forgerock.openam.session.service.access.SessionPersistenceObservable;
+import org.forgerock.openam.session.service.access.persistence.InternalSessionPersistenceStore;
+import org.forgerock.openam.session.service.access.persistence.InternalSessionStore;
+import org.forgerock.openam.tokens.CoreTokenField;
+import org.forgerock.openam.tokens.TokenType;
+import org.forgerock.openam.utils.Time;
+import org.forgerock.util.Reject;
+import org.forgerock.util.annotations.VisibleForTesting;
 
 /**
  * The <code>InternalSession</code> class represents a Webtop internal session.
@@ -398,7 +404,20 @@ public class InternalSession implements Serializable, AMSession, SessionPersiste
      * <code>false</code> otherwise
      */
     public boolean isTimedOut() {
-        return timedOutTimeInSeconds != 0;
+        // the session has already been timed out by a session monitor task
+        if (timedOutTimeInSeconds != 0) {
+            return true;
+        }
+        // the session has passed its maximum session life
+        if (getMaxSessionExpirationTime(TimeUnit.MILLISECONDS) <= currentTimeMillis()) {
+            return true;
+        }
+        // the session has reached its maximum idle time
+        if (getMaxIdleExpirationTime(TimeUnit.MILLISECONDS) <= currentTimeMillis()) {
+            return true;
+        }
+        // the session has not timed out
+        return false;
     }
 
     /**
@@ -767,8 +786,7 @@ public class InternalSession implements Serializable, AMSession, SessionPersiste
      * @param timeoutTime The timeout time (in millis).
      */
     public void setTimedOutTime(long timeoutTime) {
-        Reject.rejectStateIfTrue(!willExpire(), "Cannot timeout non-expiring session.");
-        Reject.rejectStateIfTrue(isTimedOut(), "Session already timed out.");
+        Reject.rejectStateIfTrue(timedOutTimeInSeconds != 0, "Session already timed out.");
         timedOutTimeInSeconds = MILLISECONDS.toSeconds(timeoutTime);
         putProperty(SESSION_TIMED_OUT, String.valueOf(timedOutTimeInSeconds));
     }

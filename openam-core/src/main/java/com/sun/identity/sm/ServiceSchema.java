@@ -24,7 +24,7 @@
  *
  * $Id: ServiceSchema.java,v 1.12 2008/08/30 16:46:47 goodearth Exp $
  *
- * Portions Copyrighted 2011-2016 ForgeRock AS.
+ * Portions Copyrighted 2011-2017 ForgeRock AS.
  */
 package com.sun.identity.sm;
 

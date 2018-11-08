@@ -29,19 +29,8 @@
 
 package com.sun.identity.monitoring;
 
-import static org.forgerock.openam.utils.Time.*;
+import static org.forgerock.openam.utils.Time.newDate;
 
-import com.iplanet.am.util.SystemProperties;
-import com.iplanet.services.ldap.DSConfigMgr;
-import com.iplanet.services.ldap.Server;
-import com.iplanet.services.ldap.ServerGroup;
-import com.sun.identity.shared.Constants;
-import com.sun.identity.shared.debug.Debug;
-import com.sun.identity.sm.DNMapper;
-import com.sun.jdmk.comm.AuthInfo;
-import com.sun.jdmk.comm.HtmlAdaptorServer;
-import com.sun.management.comm.SnmpAdaptorServer;
-import com.sun.management.snmp.SnmpStatusException;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -52,12 +41,12 @@ import java.text.SimpleDateFormat;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+
 import javax.management.InstanceAlreadyExistsException;
 import javax.management.InstanceNotFoundException;
 import javax.management.JMException;
@@ -72,6 +61,7 @@ import javax.management.RuntimeOperationsException;
 import javax.management.remote.JMXConnectorServer;
 import javax.management.remote.JMXConnectorServerFactory;
 import javax.management.remote.JMXServiceURL;
+
 import org.forgerock.openam.monitoring.cts.CtsConnectionFailureRate;
 import org.forgerock.openam.monitoring.cts.CtsConnectionSuccessRate;
 import org.forgerock.openam.monitoring.cts.CtsMonitoring;
@@ -90,6 +80,18 @@ import org.forgerock.openam.monitoring.session.FORGEROCK_OPENAM_SESSION_MIBImpl;
 import org.forgerock.openam.monitoring.session.InternalSessions;
 import org.forgerock.openam.monitoring.session.RemoteSessions;
 import org.forgerock.openam.monitoring.session.StatelessSessions;
+
+import com.iplanet.am.util.SystemProperties;
+import com.iplanet.services.ldap.DSConfigMgr;
+import com.iplanet.services.ldap.Server;
+import com.iplanet.services.ldap.ServerGroup;
+import com.sun.identity.shared.Constants;
+import com.sun.identity.shared.debug.Debug;
+import com.sun.identity.sm.DNMapper;
+import com.sun.jdmk.comm.AuthInfo;
+import com.sun.jdmk.comm.HtmlAdaptorServer;
+import com.sun.management.comm.SnmpAdaptorServer;
+import com.sun.management.snmp.SnmpStatusException;
 
 
 /**
@@ -1108,13 +1110,6 @@ public class Agent {
         return sunMib == null ? null : sunMib.getFedEntitiesGroup();
     }
 
-    /**
-     *  Return the pointer to the Entitlements Service mbean
-     */
-    public static SsoServerEntitlementSvcImpl getEntitlementsGroup() {
-        return sunMib == null ? null : sunMib.getEntitlementsGroup();
-    }
-
     public static String getSsoProtocol() {
         if (agentSvrInfo != null) {
             return agentSvrInfo.serverProtocol;
@@ -1406,68 +1401,6 @@ public class Agent {
 
         if (debug.messageEnabled()) {
             debug.message (classMethod + sb.toString());
-        }
-
-        /*
-         * create the Entitlements MBeans for this realm as specified by Ii.
-         * the Network Monitors are not per-real.  the set list is in
-         * MonitoringUtil.java (getNetworkMonitorNames()).
-         * the Policy Stats are realm-based.
-         */
-        String[] nms = MonitoringUtil.getNetworkMonitorNames();
-
-        if ((nms != null) && (nms.length > 0)) {
-            SsoServerEntitlementSvc esi = sunMib.getEntitlementsGroup();
-            if (esi != null) {
-                // now the realm-based policy stats
-
-                try {
-                    TableSsoServerEntitlementPolicyStatsTable ptab =
-                            esi.accessSsoServerEntitlementPolicyStatsTable();
-                    for (int i = 0; i < realmList.size(); i++) {
-                        String ss = realmList.get(i);
-                        Integer Ii = Integer.valueOf(i+1);
-                        SsoServerEntitlementPolicyStatsEntryImpl ssi =
-                                new SsoServerEntitlementPolicyStatsEntryImpl(sunMib);
-                        ssi.EntitlementPolicyCaches = 0;
-                        ssi.EntitlementReferralCaches = 0;
-                        ssi.EntitlementPolicyStatsIndex = Integer.valueOf(i+1);
-                        ssi.SsoServerRealmIndex = Ii;
-                        ObjectName sname =
-                                ssi.
-                                        createSsoServerEntitlementPolicyStatsEntryObjectName(
-                                                server);
-
-                        if (sname == null) {
-                            debug.error(classMethod +
-                                    "Error creating object for Entitlements " +
-                                    "Policy Stats, realm = '" + ss + "'");
-                            continue;
-                        }
-
-                        try {
-                            ptab.addEntry(ssi, sname);
-                            if ((server != null) && (ssi != null)) {
-                                server.registerMBean(ssi, sname);
-                            }
-                        } catch (JMException ex) {
-                            debug.error(classMethod +
-                                    "on Entitlements Policy Stats '" +
-                                    ss + "': ", ex);
-                        } catch (SnmpStatusException ex) {
-                            debug.error(classMethod +
-                                    "on Entitlements Policy Stats '" +
-                                    ss + "': ", ex);
-                        }
-                    }
-                } catch (SnmpStatusException ex) {
-                    debug.error(classMethod +
-                            "getting Entitlements Policy Stats table: ", ex);
-                }
-            }
-        } else {
-            debug.error(classMethod +
-                    "Entitlement NetworkMonitor list empty.");
         }
 
         Date stopDate = newDate();

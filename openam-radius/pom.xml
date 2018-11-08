@@ -13,6 +13,7 @@
  * information: "Portions copyright [year] [name of copyright owner]".
  *
  * Copyright 2011-2016 ForgeRock AS.
+ * Portions Copyright 2018 Wren Security.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
@@ -29,8 +30,8 @@
     </properties>
 
     <!-- Component Definition -->
-    <name>OpenAM RADIUS</name>
-    <description>OpenAM RADIUS server and common RADIUS libraries</description>
+    <name>Wren:AM - RADIUS</name>
+    <description>Wren:AM RADIUS server and common RADIUS libraries</description>
     <artifactId>openam-radius</artifactId>
     <packaging>pom</packaging>
 

@@ -13,6 +13,7 @@
  * information: "Portions copyright [year] [name of copyright owner]".
  *
  * Copyright 2011-2016 ForgeRock AS.
+ * Portions Copyright 2018 Wren Security.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
@@ -25,8 +26,8 @@
     </parent>
 
     <!-- Component Definition -->
-    <name>OpenAM Client SDK</name>
-    <description>OpenAM Java Client SDK</description>
+    <name>Wren:AM - Client SDK</name>
+    <description>Wren:AM Java Client SDK</description>
     <artifactId>openam-clientsdk</artifactId>
     <packaging>jar</packaging>
 
@@ -105,7 +106,7 @@
                 <configuration>
                     <!--
                     Anything you can find here is just a replication attempt of the ant ClientSDK build system.
-                    In future versions of OpenAM we need to enhance this generation process by simply separating
+                    In future versions of Wren:AM we need to enhance this generation process by simply separating
                     remote/local implementations in a much cleaner way
                     -->
                     <artifactSet>
@@ -367,6 +368,8 @@
                                 <include>org/forgerock/openam/upgrade/UpgradeException*</include>
                                 <include>org/forgerock/openam/validation/ResponseValidationFilter*</include>
 
+                                <include>org/forgerock/openam/cts/continuous/watching/SessionWatchingNotSupported*</include>
+
                                 <include>META-INF/services/org.forgerock.openam.entitlement.ConditionTypeRegistry</include>
                             </includes>
                             <excludes>
@@ -618,10 +621,10 @@
                     <transformers>
                         <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                             <manifestEntries>
-                                <Specification-Title>OpenAM Java CLient SDK</Specification-Title>
+                                <Specification-Title>Wren:AM Java CLient SDK</Specification-Title>
                                 <Specification-Version>${project.version} - ${maven.build.timestamp}</Specification-Version>
-                                <Specification-Vendor>ForgeRock</Specification-Vendor>
-                                <Implementation-Title>OpenAM Java Client SDK</Implementation-Title>
+                                <Specification-Vendor>Wren Security</Specification-Vendor>
+                                <Implementation-Title>Wren:AM Java Client SDK</Implementation-Title>
                                 <Implementation-Version>${project.version} - ${maven.build.timestamp}</Implementation-Version>
                                 <Implementation-Vendor>ForgeRock</Implementation-Vendor>
                                 <Built-By>${user.name}</Built-By>

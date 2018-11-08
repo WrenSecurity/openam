@@ -24,7 +24,7 @@
  *
  * $Id: AuthContext.java,v 1.10 2009/01/28 05:34:52 ww203982 Exp $
  *
- * Portions Copyrighted 2011-2015 ForgeRock AS.
+ * Portions Copyrighted 2011-2017 ForgeRock AS.
  */
 
 package com.sun.identity.authentication.internal;

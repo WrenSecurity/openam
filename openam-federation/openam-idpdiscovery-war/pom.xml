@@ -13,6 +13,7 @@
  * information: "Portions copyright [year] [name of copyright owner]".
  *
  * Copyright 2013-2016 ForgeRock AS.
+ * Portions Copyright 2018 Wren Security.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
@@ -25,8 +26,8 @@
     </parent>
 
     <!-- Component Definition -->
-    <name>OpenAM IdP Discovery WAR</name>
-    <description>OpenAM IdP Discovery WAR</description>
+    <name>Wren:AM - IdP Discovery WAR</name>
+    <description>Wren:AM IdP Discovery WAR</description>
     <artifactId>openam-idpdiscovery-war</artifactId>
     <packaging>war</packaging>
 
@@ -39,10 +40,10 @@
                 <configuration>
                     <archive>
                         <manifestEntries>
-                            <Specification-Title>OpenAM IdP Discovery WAR</Specification-Title>
+                            <Specification-Title>Wren:AM IdP Discovery WAR</Specification-Title>
                             <Specification-Version>${project.version} - ${maven.build.timestamp}</Specification-Version>
-                            <Specification-Vendor>ForgeRock</Specification-Vendor>
-                            <Implementation-Title>OpenAM IdP Discovery WAR</Implementation-Title>
+                            <Specification-Vendor>Wren Security</Specification-Vendor>
+                            <Implementation-Title>Wren:AM IdP Discovery WAR</Implementation-Title>
                             <Implementation-Version>${project.version} - ${maven.build.timestamp}</Implementation-Version>
                             <Implementation-Vendor>ForgeRock</Implementation-Vendor>
                             <Build-Time>${maven.build.timestamp}</Build-Time>

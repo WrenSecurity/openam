@@ -24,6 +24,11 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>openam-notifications</artifactId>
+    <name>Wren:AM - Event Notifications API</name>
+    <description>
+        Contains all of the interfaces needed to subscribe to topics and receive
+        notifications when events related to those topics occur.
+    </description>
 
     <dependencies>
         <dependency>

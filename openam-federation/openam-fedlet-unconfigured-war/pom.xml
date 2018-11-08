@@ -13,6 +13,7 @@
  * information: "Portions copyright [year] [name of copyright owner]".
  *
  * Copyright 2016 ForgeRock AS.
+ * Portions Copyright 2018 Wren Security.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
@@ -23,7 +24,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>openam-fedlet-unconfigured-war</artifactId>
-    <name>OpenAM Fedlet WAR</name>
+    <name>Wren:AM - Fedlet WAR</name>
     <packaging>war</packaging>
 
     <build>
@@ -34,10 +35,10 @@
                 <configuration>
                     <archive>
                         <manifestEntries>
-                            <Specification-Title>OpenAM Fedlet WAR</Specification-Title>
+                            <Specification-Title>Wren:AM Fedlet WAR</Specification-Title>
                             <Specification-Version>${project.version} - ${maven.build.timestamp}</Specification-Version>
-                            <Specification-Vendor>ForgeRock</Specification-Vendor>
-                            <Implementation-Title>OpenAM Fedlet WAR</Implementation-Title>
+                            <Specification-Vendor>Wren Security</Specification-Vendor>
+                            <Implementation-Title>Wren:AM Fedlet WAR</Implementation-Title>
                             <Implementation-Version>${project.version} - ${maven.build.timestamp}</Implementation-Version>
                             <Implementation-Vendor>ForgeRock</Implementation-Vendor>
                             <Build-Time>${maven.build.timestamp}</Build-Time>

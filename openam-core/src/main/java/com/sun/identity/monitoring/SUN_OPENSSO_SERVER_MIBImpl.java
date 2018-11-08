@@ -56,7 +56,6 @@ public class SUN_OPENSSO_SERVER_MIBImpl extends SUN_OPENSSO_SERVER_MIB implement
     private SsoServerFedCOTsImpl fedCotsGroup;
     private SsoServerPolicyAgentsImpl policyAgentsGroup;
     private SsoServerFedEntitiesImpl fedEntitiesGroup;
-    private SsoServerEntitlementSvcImpl entitlementsGroup;
     private SsoServerConnPoolSvcImpl connPoolGroup;
 
     /**
@@ -595,49 +594,6 @@ public class SUN_OPENSSO_SERVER_MIBImpl extends SUN_OPENSSO_SERVER_MIB implement
         return topologyGroup;
     }
 
-    // ------------------------------------------------------------
-    // 
-    // Initialization of the "SsoServerEntitlementSvc" group.
-    // 
-    // ------------------------------------------------------------
-
-    /**
-     * Factory method for "SsoServerEntitlementSvc" group MBean.
-     * 
-     * You can redefine this method if you need to replace the default
-     * generated MBean class with your own customized class.
-     * 
-     * @param groupName Name of the group ("SsoServerEntitlementSvc")
-     * @param groupOid  OID of this group
-     * @param groupObjname ObjectName for this group (may be null)
-     * @param server    MBeanServer for this group (may be null)
-     * 
-     * @return An instance of the MBean class generated for the
-     *         "SsoServerEntitlementSvc" group (SsoServerEntitlementSvc)
-     * 
-     * Note that when using standard metadata,
-     * the returned object must implement the "SsoServerEntitlementSvcMBean"
-     * interface.
-     **/
-    @Override
-    protected Object createSsoServerEntitlementSvcMBean(
-        String groupName,
-        String groupOid,
-        ObjectName groupObjname,
-        MBeanServer server)
-    {
-
-        // Note that when using standard metadata,
-        // the returned object must implement the "SsoServerEntitlementSvcMBean"
-        // interface.
-        //
-        if (server != null) 
-            entitlementsGroup = new SsoServerEntitlementSvcImpl(this,server);
-        else 
-            entitlementsGroup = new SsoServerEntitlementSvcImpl(this);
-
-        return entitlementsGroup;
-    }
 
     @Override
     protected Object createSsoServerConnPoolSvcMBean(
@@ -798,10 +754,6 @@ public class SUN_OPENSSO_SERVER_MIBImpl extends SUN_OPENSSO_SERVER_MIB implement
 
     protected SsoServerConnPoolSvcImpl getConnPoolGroup() {
         return connPoolGroup;
-    }
-
-    protected SsoServerEntitlementSvcImpl getEntitlementsGroup() {
-        return entitlementsGroup;
     }
 
     protected SsoServerFedCOTsImpl getFedCotsGroup() {

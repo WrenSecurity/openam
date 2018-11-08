@@ -6,7 +6,7 @@
  * Use is subject to license terms.
  */
 
-   Portions Copyrighted 2013-2016 ForgeRock AS.
+   Portions Copyrighted 2013-2017 ForgeRock AS.
 --%>
 
 <%@page language="java" %>
@@ -82,7 +82,7 @@
 <title><%=windowTitle %></title>
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-  <meta name="Copyright" content="Copyright &copy; 2010-2016, ForgeRock AS. All Rights Reserved.">
+  <meta name="Copyright" content="Copyright &copy; 2010-2017, ForgeRock AS. All Rights Reserved.">
   <cc:stylesheet />
 </head>
 

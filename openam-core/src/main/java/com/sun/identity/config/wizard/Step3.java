@@ -24,7 +24,7 @@
  *
  * $Id: Step3.java,v 1.39 2009/12/17 17:43:39 goodearth Exp $
  *
- * Portions Copyrighted 2010-2016 ForgeRock AS.
+ * Portions Copyrighted 2010-2017 ForgeRock AS.
  * Portions Copyright 2016 Nomura Research Institute, Ltd.
  */
 

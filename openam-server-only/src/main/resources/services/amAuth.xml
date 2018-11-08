@@ -26,7 +26,7 @@
 
     $Id: amAuth.xml,v 1.16 2009/11/25 12:06:32 manish_rustagi Exp $
 
-    Portions Copyrighted 2011-2016 ForgeRock AS.
+    Portions Copyrighted 2011-2017 ForgeRock AS.
 -->
 
 <!DOCTYPE ServicesConfiguration

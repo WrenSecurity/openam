@@ -24,12 +24,32 @@
  *
  * $Id: DataStore.java,v 1.13 2010/01/20 17:01:35 veiming Exp $
  *
- * Portions Copyrighted 2012-2016 ForgeRock AS.
+ * Portions Copyrighted 2012-2017 ForgeRock AS.
  */
 package com.sun.identity.entitlement.opensso;
 
 import static java.util.Collections.emptySet;
 import static org.forgerock.openam.utils.CollectionUtils.isNotEmpty;
+
+import java.security.AccessController;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import javax.naming.NamingException;
+import javax.security.auth.Subject;
+
+import org.forgerock.openam.entitlement.PolicyConstants;
+import org.forgerock.openam.ldap.LDAPUtils;
+import org.forgerock.opendj.ldap.DN;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import com.iplanet.sso.SSOException;
 import com.iplanet.sso.SSOToken;
@@ -51,27 +71,6 @@ import com.sun.identity.sm.SMSEntry;
 import com.sun.identity.sm.SMSException;
 import com.sun.identity.sm.ServiceConfig;
 import com.sun.identity.sm.ServiceConfigManager;
-import org.forgerock.openam.entitlement.PolicyConstants;
-import org.forgerock.openam.ldap.LDAPUtils;
-import org.forgerock.openam.utils.CollectionUtils;
-import org.forgerock.opendj.ldap.DN;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import javax.naming.NamingException;
-import javax.security.auth.Subject;
-import java.security.AccessController;
-import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * This class *talks* to SMS to get the configuration information.
@@ -82,8 +81,6 @@ public class DataStore {
     public static final String REFERRAL_STORE = "referrals";
 
     private static final String SERVICE_NAME = "sunEntitlementIndexes";
-    private static final String INDEX_COUNT = "indexCount";
-    private static final String REFERRAL_INDEX_COUNT = "referralIndexCount";
     private static final String REALM_DN_TEMPLATE =
          "ou={0},ou=default,ou=OrganizationConfig,ou=1.0,ou=" + SERVICE_NAME +
          ",ou=services,{1}";
@@ -116,13 +113,7 @@ public class DataStore {
         NetworkMonitor.getInstance("dbLookupReferrals");
     private static final String HIDDEN_REALM_DN =
         "o=sunamhiddenrealmdelegationservicepermissions,ou=services,";
-    
-    // count of number of policies per realm
-    private static ReadWriteLock countRWLock = new ReentrantReadWriteLock();
-    private static Map<String, Integer> policiesPerRealm =
-        new HashMap<String, Integer>();
-    private static Map<String, Integer> referralsPerRealm =
-        new HashMap<String, Integer>();
+
     private static SSOToken adminToken = (SSOToken)
         AccessController.doPrivileged(AdminTokenAction.getInstance());
 
@@ -198,143 +189,6 @@ public class DataStore {
             mgr.createOrganizationConfig(realm, null);
         }
         return orgConf;
-    }
-
-    void clearIndexCount(String realm, boolean referral) {
-        countRWLock.writeLock().lock();
-        try {
-            if (referral) {
-                referralsPerRealm.remove(DNMapper.orgNameToDN(realm));
-            } else {
-                policiesPerRealm.remove(DNMapper.orgNameToDN(realm));
-            }
-        } finally {
-            countRWLock.writeLock().unlock();
-        }
-    }
-
-    private void updateIndexCount(String realm, int num, boolean referral) {
-        countRWLock.writeLock().lock();
-
-        try {
-            String key = (referral) ? REFERRAL_INDEX_COUNT : INDEX_COUNT;
-
-            ServiceConfig orgConf = getOrgConfig(adminToken, realm);
-            Map<String, Set<String>> map = orgConf.getAttributes();
-            Set<String> set = map.get(key);
-            int count = num;
-
-            if ((set != null) && !set.isEmpty()) {
-                String strCount = (String) set.iterator().next();
-                count += Integer.parseInt(strCount);
-                set.clear();
-            } else {
-                set = new HashSet<String>();
-                map.put(key, set);
-            }
-
-            set.add(Integer.toString(count));
-            orgConf.setAttributes(map);
-
-            if (referral) {
-                referralsPerRealm.put(DNMapper.orgNameToDN(realm), count);
-            } else {
-                policiesPerRealm.put(DNMapper.orgNameToDN(realm), count);
-            }
-        } catch (NumberFormatException ex) {
-            PolicyConstants.DEBUG.error("DataStore.updateIndexCount", ex);
-        } catch (SMSException ex) {
-            PolicyConstants.DEBUG.error("DataStore.updateIndexCount", ex);
-        } catch (SSOException ex) {
-            PolicyConstants.DEBUG.error("DataStore.updateIndexCount", ex);
-        } finally {
-            countRWLock.writeLock().unlock();
-        }
-    }
-
-    private static int getIndexCount(String realm, boolean referral) {
-        int count = 0;
-        if (adminToken != null) {
-            try {
-                ServiceConfigManager mgr = new ServiceConfigManager(
-                    SERVICE_NAME, adminToken);
-                ServiceConfig orgConf = mgr.getOrganizationConfig(realm, null);
-                if (orgConf != null) {
-                    Map<String, Set<String>> map = orgConf.getAttributes();
-                    Set<String> set = (referral) ?
-                        map.get(REFERRAL_INDEX_COUNT) : map.get(INDEX_COUNT);
-                    if ((set != null) && !set.isEmpty()) {
-                        String strCount = (String) set.iterator().next();
-                        count = Integer.parseInt(strCount);
-                    }
-                }
-            } catch (NumberFormatException ex) {
-                PolicyConstants.DEBUG.error("DataStore.getIndexCount", ex);
-            } catch (SMSException ex) {
-                PolicyConstants.DEBUG.error("DataStore.getIndexCount", ex);
-            } catch (SSOException ex) {
-                PolicyConstants.DEBUG.error("DataStore.getIndexCount", ex);
-            }
-        }
-        return count;
-    }
-
-    public static int getNumberOfPolicies() {
-        return getCountInMap(policiesPerRealm);
-    }
-
-    public static int getNumberOfReferrals() {
-        return getCountInMap(referralsPerRealm);
-    }
-
-    private static int getCountInMap(Map<String, Integer> map) {
-        countRWLock.readLock().lock();
-        try {
-            int total = 0;
-            for (Integer cnt : map.values()) {
-                total += cnt;
-            }
-            return total;
-        } finally {
-            countRWLock.readLock().unlock();
-        }
-    }
-
-    public static int getNumberOfPolicies(String realm) {
-        countRWLock.readLock().lock();
-        try {
-            int totalPolicies = 0;
-            String dnRealm = DNMapper.orgNameToDN(realm);
-            Integer tp = policiesPerRealm.get(dnRealm);
-            if (tp == null) {
-                totalPolicies = getIndexCount(realm, false);
-                policiesPerRealm.put(dnRealm, totalPolicies);
-            } else {
-                totalPolicies = tp.intValue();
-            }
-            return (totalPolicies);
-        } finally {
-            countRWLock.readLock().unlock();
-        }
-    }
-
-    public static int getNumberOfReferrals(String realm) {
-        countRWLock.readLock().lock();
-        try {
-            int referralCnt = 0;
-            String dnRealm = DNMapper.orgNameToDN(realm);
-            Integer tp = referralsPerRealm.get(dnRealm);
-            if (tp == null) {
-                referralCnt = getIndexCount(realm, true);
-                referralsPerRealm.put(dnRealm, referralCnt);
-            } else {
-                referralCnt = tp.intValue();
-            }
-
-            return (referralCnt);
-        } finally {
-            countRWLock.readLock().unlock();
-        }
     }
 
     /**
@@ -449,8 +303,6 @@ public class DataStore {
 
             s.setAttributes(map);
             s.save();
-
-            updateIndexCount(realm, 1, false);
         } catch (JSONException e) {
             throw new EntitlementException(210, e);
         } catch (SSOException e) {
@@ -568,8 +420,6 @@ public class DataStore {
 
             s.setAttributes(map);
             s.save();
-
-            updateIndexCount(realm, 1, true);
         } catch (SSOException e) {
             throw new EntitlementException(270, e);
         } catch (SMSException e) {
@@ -607,7 +457,6 @@ public class DataStore {
             if (SMSEntry.checkIfEntryExists(dn, token)) {
                 SMSEntry s = new SMSEntry(token, dn);
                 s.delete();
-                updateIndexCount(realm, -1, false);
             }
         } catch (SMSException e) {
             Object[] arg = {dn};
@@ -646,7 +495,6 @@ public class DataStore {
             if (SMSEntry.checkIfEntryExists(dn, token)) {
                 SMSEntry s = new SMSEntry(token, dn);
                 s.delete();
-                updateIndexCount(realm, -1, true);
             }
         } catch (SMSException e) {
             Object[] arg = {dn};
@@ -779,38 +627,22 @@ public class DataStore {
 
 
     /**
-     * Returns a set of privilege that satifies the resource and subject
-     * indexes.
+     * Populates the given iterator with policies that satisfy the resource and subject indexes.
      *
-     * @param adminSubject Subject who has the rights to read datastore.
      * @param realm Realm name
      * @param iterator Buffered iterator to have the result fed to it.
      * @param indexes Resource search indexes.
      * @param subjectIndexes Subject search indexes.
      * @param bSubTree <code>true</code> to do sub tree search
-     * @param excludeDNs Set of DN to be excluded from the search results.
-     * @return a set of privilege that satifies the resource and subject
-     * indexes.
      */
-    public Set<IPrivilege> search(
-        Subject adminSubject,
+    public void search(
         String realm,
         BufferedIterator iterator,
         ResourceSearchIndexes indexes,
         Set<String> subjectIndexes,
-        boolean bSubTree,
-        Set<String> excludeDNs
+        boolean bSubTree
     ) throws EntitlementException {
-        SSOToken token = getSSOToken(adminSubject);
-        Set<IPrivilege> results = searchPrivileges(realm,
-            iterator, indexes, subjectIndexes, bSubTree, excludeDNs);
-        // Get referrals only if count is greater than 0
-        int countInt = getNumberOfReferrals(realm);
-        if (countInt > 0) {
-            results.addAll(searchReferral(token, realm, iterator,
-                indexes, bSubTree, excludeDNs));
-        }
-        return results;
+        searchPrivileges(realm, iterator, indexes, subjectIndexes, bSubTree);
     }
 
     /**
@@ -851,15 +683,13 @@ public class DataStore {
         return privilege;
     }
 
-    private Set<IPrivilege> searchPrivileges(
+    private void searchPrivileges(
             String realm,
             BufferedIterator iterator,
             ResourceSearchIndexes indexes,
             Set<String> subjectIndexes,
-            boolean bSubTree,
-            Set<String> excludeDNs
+            boolean bSubTree
     ) throws EntitlementException {
-        Set<IPrivilege> results = new HashSet<IPrivilege>();
         String filter = getFilter(indexes, subjectIndexes, bSubTree);
         String baseDN = getSearchBaseDN(realm, null);
 
@@ -873,7 +703,7 @@ public class DataStore {
         }
 
         if (filter != null) {
-            SSOToken token = (SSOToken) AccessController.doPrivileged(
+            SSOToken token = AccessController.doPrivileged(
                     AdminTokenAction.getInstance());
 
             long start = DB_MONITOR_PRIVILEGE.start();
@@ -881,19 +711,15 @@ public class DataStore {
             if (SMSEntry.checkIfEntryExists(baseDN, token)) {
                 try {
                     Iterator i = SMSEntry.search(
-                            token, baseDN, filter, NO_LIMIT, NO_LIMIT, NOT_SORTED, NOT_SORTED, excludeDNs);
+                            token, baseDN, filter, NO_LIMIT, NO_LIMIT, NOT_SORTED, NOT_SORTED, null);
                     while (i.hasNext()) {
                         SMSDataEntry e = (SMSDataEntry) i.next();
                         Privilege privilege = Privilege.getInstance(
                                 new JSONObject(e.getAttributeValue(
                                         SERIALIZABLE_INDEX_KEY)));
                         iterator.add(privilege);
-                        results.add(privilege);
                     }
-                } catch (JSONException e) {
-                    Object[] arg = {baseDN};
-                    throw new EntitlementException(52, arg, e);
-                } catch (SMSException e) {
+                } catch (JSONException | SMSException e) {
                     Object[] arg = {baseDN};
                     throw new EntitlementException(52, arg, e);
                 }
@@ -901,7 +727,6 @@ public class DataStore {
 
             DB_MONITOR_PRIVILEGE.end(start);
         }
-        return results;
     }
 
     List<Privilege> findPoliciesByRealm(String realm) throws EntitlementException {
@@ -950,73 +775,6 @@ public class DataStore {
             }
         }
 
-        return results;
-    }
-
-    /**
-     * Returns a set of referral privilege that satifies the resource and
-     * subject indexes.
-     *
-     * @param adminToken Subject who has the rights to read datastore.
-     * @param realm Realm name
-     * @param iterator Buffered iterator to have the result fed to it.
-     * @param indexes Resource search indexes.
-     * @param bSubTree <code>true</code> to do sub tree search
-     * @param excludeDNs Set of DN to be excluded from the search results.
-     * @return a set of privilege that satifies the resource and subject
-     * indexes.
-     */
-    public Set<ReferralPrivilege> searchReferral(
-        SSOToken adminToken,
-        String realm,
-        BufferedIterator iterator,
-        ResourceSearchIndexes indexes,
-        boolean bSubTree,
-        Set<String> excludeDNs
-    ) throws EntitlementException {
-        Set<ReferralPrivilege> results = new HashSet<ReferralPrivilege>();
-        String filter = getFilter(indexes, null, bSubTree);
-        String baseDN = getSearchBaseDN(realm, REFERRAL_STORE);
-
-        if (PolicyConstants.DEBUG.messageEnabled()) {
-            PolicyConstants.DEBUG.message(
-                "[PolicyEval] DataStore.searchReferral");
-            PolicyConstants.DEBUG.message(
-                "[PolicyEval] search filter: " + filter);
-            PolicyConstants.DEBUG.message(
-                "[PolicyEval] search DN: " + baseDN);
-        }
-
-        if (filter != null) {
-            SSOToken token = (SSOToken) AccessController.doPrivileged(
-                AdminTokenAction.getInstance());
-            long start = DB_MONITOR_REFERRAL.start();
-
-            if (SMSEntry.checkIfEntryExists(baseDN, token)) {
-                try {
-                    Iterator i = SMSEntry.search(
-                        token, baseDN, filter, NO_LIMIT, NO_LIMIT, NOT_SORTED, NOT_SORTED, excludeDNs);
-                    while (i.hasNext()) {
-                        SMSDataEntry e = (SMSDataEntry) i.next();
-                        ReferralPrivilege referral = ReferralPrivilege.
-                            getInstance(
-                            new JSONObject(e.getAttributeValue(
-                            SERIALIZABLE_INDEX_KEY)));
-                        iterator.add(referral);
-                        results.add(referral);
-                    }
-                    iterator.isDone();
-                } catch (JSONException e) {
-                    Object[] arg = {baseDN};
-                    throw new EntitlementException(52, arg, e);
-                } catch (SMSException e) {
-                    Object[] arg = {baseDN};
-                    throw new EntitlementException(52, arg, e);
-                }
-            }
-
-            DB_MONITOR_REFERRAL.end(start);
-        }
         return results;
     }
 
@@ -1117,24 +875,6 @@ public class DataStore {
             return adminToken;
         }
         return SubjectUtils.getSSOToken(subject);
-    }
-
-    static Set<String> getReferralNames(String realm, String referredRealm)
-        throws EntitlementException {
-        try {
-            String filter = "(ou=" + REFERRAL_REALMS + "=" +
-                DNMapper.orgNameToRealmName(referredRealm) + ")";
-            String baseDNString = getSearchBaseDN(realm, REFERRAL_STORE);
-
-            if (SMSEntry.checkIfEntryExists(baseDNString, adminToken)) {
-                DN baseDN = DN.valueOf(baseDNString);
-                return LDAPUtils.collectNonIdenticalValues(baseDN,
-                        SMSEntry.search(adminToken, baseDNString, filter, 0, 0, false, false));
-            }
-            return emptySet();
-        } catch (SMSException | NamingException ex) {
-            throw new EntitlementException(215, ex);
-        }
     }
 
     private static String escapeCharactersInFilter(String assertionValue) {

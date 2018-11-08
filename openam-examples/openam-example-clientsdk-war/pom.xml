@@ -13,6 +13,7 @@
  * information: "Portions copyright [year] [name of copyright owner]".
  *
  * Copyright 2012-2016 ForgeRock AS.
+ * Portions Copyright 2018 Wren Security.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
@@ -24,8 +25,8 @@
     </parent>
 
     <!-- Component Definition -->
-    <name>OpenAM Example ClientSDK WAR</name>
-    <description>OpenAM Example ClientSDK WAR</description>
+    <name>Wren:AM - Example ClientSDK WAR</name>
+    <description>Wren:AM Example ClientSDK WAR</description>
     <artifactId>openam-example-clientsdk-war</artifactId>
     <packaging>war</packaging>
 
@@ -39,10 +40,10 @@
                 <configuration>
                     <archive>
                         <manifestEntries>
-                            <Specification-Title>OpenAM Example ClientSDK WAR</Specification-Title>
+                            <Specification-Title>Wren:AM Example ClientSDK WAR</Specification-Title>
                             <Specification-Version>${project.version} - ${maven.build.timestamp}</Specification-Version>
-                            <Specification-Vendor>ForgeRock</Specification-Vendor>
-                            <Implementation-Title>OpenAM Example ClientSDK WAR</Implementation-Title>
+                            <Specification-Vendor>Wren Security</Specification-Vendor>
+                            <Implementation-Title>Wren:AM Example ClientSDK WAR</Implementation-Title>
                             <Implementation-Version>${project.version} - ${maven.build.timestamp}</Implementation-Version>
                             <Implementation-Vendor>ForgeRock</Implementation-Vendor>
                             <Build-Time>${maven.build.timestamp}</Build-Time>

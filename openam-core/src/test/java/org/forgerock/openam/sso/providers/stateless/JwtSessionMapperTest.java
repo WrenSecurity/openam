@@ -11,8 +11,9 @@
  * Header, with the fields enclosed by brackets [] replaced by your own identifying
  * information: "Portions copyright [year] [name of copyright owner]".
  *
- * Copyright 2015-2016 ForgeRock AS.
+ * Copyright 2015-2017 ForgeRock AS.
  */
+
 package org.forgerock.openam.sso.providers.stateless;
 
 import static org.testng.Assert.assertEquals;

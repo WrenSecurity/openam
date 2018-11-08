@@ -238,6 +238,14 @@ public final class ApiDescriptorConstants {
             "SmsAggregatingAgentsQueryHandler#";
 
     /** Constant used as key to API Descriptor translations **/
+    public static final String SMS_AGENT_GROUPS_RESOURCE = TRANSLATION_KEY_PREFIX +
+            "SmsAgentGroupsResource#";
+
+    /** Constant used as key to API Descriptor translations **/
+    public static final String SMS_AGGREGATING_AGENT_GROUPS_QUERY_HANDLER = TRANSLATION_KEY_PREFIX +
+            "SmsAggregatingAgentGroupsQueryHandler#";
+
+    /** Constant used as key to API Descriptor translations **/
     public static final String SMS_REALM_PROVIDER = TRANSLATION_KEY_PREFIX + "SmsRealmProvider#";
 
     private ApiDescriptorConstants() {

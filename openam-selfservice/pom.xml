@@ -13,6 +13,7 @@
  * information: "Portions copyright [year] [name of copyright owner]".
  *
  * Copyright 2015-2016 ForgeRock AS.
+ * Portions Copyright 2018 Wren Security.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
@@ -23,8 +24,8 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>openam-selfservice</artifactId>
-    <name>OpenAM Self Service</name>
-    <description>Home for OpenAM self service integration</description>
+    <name>Wren:AM - Self Service</name>
+    <description>Home for Wren:AM self service integration</description>
 
     <properties>
         <checkstyleFailOnError>true</checkstyleFailOnError>

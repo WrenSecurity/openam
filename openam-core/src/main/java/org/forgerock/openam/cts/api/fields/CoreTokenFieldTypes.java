@@ -15,9 +15,12 @@
  */
 package org.forgerock.openam.cts.api.fields;
 
+import static java.util.Collections.singleton;
+
 import java.text.MessageFormat;
 import java.util.Calendar;
 import java.util.Map;
+import java.util.Set;
 
 import org.forgerock.openam.cts.api.CoreTokenConstants;
 import org.forgerock.openam.cts.exceptions.CoreTokenException;
@@ -64,27 +67,64 @@ public class CoreTokenFieldTypes {
                     field.name()));
         }
 
-        Class<?> expectedType;
-        if (isString(field)) {
-            expectedType = String.class;
+        if (isMulti(field)) {
+            validateMultiStringType(field, value);
+        } else if (isString(field)) {
+            validateSingleType(field, value, String.class);
         } else if (isInteger(field)) {
-            expectedType = Integer.class;
+            validateSingleType(field, value, Integer.class);
         } else if (isCalendar(field)) {
-            expectedType = Calendar.class;
+            validateSingleType(field, value, Calendar.class);
         } else if (isByteArray(field)) {
-            expectedType = byte[].class;
+            validateSingleType(field, value, byte[].class);
         } else {
             throw new IllegalStateException("Unknown field: " + field.name());
         }
+    }
 
+    private static void validateMultiStringType(CoreTokenField field, Object value) throws CoreTokenException {
+        if (value instanceof String) {
+            return;
+        }
+
+        if (!(value instanceof Set)) {
+            throw new CoreTokenException(MessageFormat.format(
+                    "\n" +
+                            CoreTokenConstants.DEBUG_HEADER +
+                            "Value was not the correct type:\n" +
+                            "           Key: {0}:{1}\n" +
+                            "Required Class: String or Set<String>\n" +
+                            "  Actual Class: {2}",
+                    CoreTokenField.class.getSimpleName(),
+                    field.name(),
+                    value.getClass().getName()));
+        }
+
+        for (Object setValue : (Set) value) {
+            if (!(setValue instanceof String)) {
+                throw new CoreTokenException(MessageFormat.format(
+                        "\n" +
+                                CoreTokenConstants.DEBUG_HEADER +
+                                "Value set contains an invalidate type:\n" +
+                                "           Key: {0}:{1}\n" +
+                                "Required Class: String\n" +
+                                "  Actual Class: {2}",
+                        CoreTokenField.class.getSimpleName(),
+                        field.name(),
+                        setValue.getClass().getName()));
+            }
+        }
+    }
+
+    private static void validateSingleType(CoreTokenField field, Object value, Class<?> expectedType) throws CoreTokenException {
         if (!expectedType.isAssignableFrom(value.getClass())) {
             throw new CoreTokenException(MessageFormat.format(
                     "\n" +
-                    CoreTokenConstants.DEBUG_HEADER +
-                    "Value was not the correct type:\n" +
-                    "           Key: {0}:{1}\n" +
-                    "Required Class: {2}" +
-                    "  Actual Class: {3}",
+                            CoreTokenConstants.DEBUG_HEADER +
+                            "Value was not the correct type:\n" +
+                            "           Key: {0}:{1}\n" +
+                            "Required Class: {2}" +
+                            "  Actual Class: {3}",
                     CoreTokenField.class.getSimpleName(),
                     field.name(),
                     expectedType.getName(),
@@ -159,9 +199,6 @@ public class CoreTokenFieldTypes {
             case STRING_THIRTEEN:
             case STRING_FOURTEEN:
             case STRING_FIFTEEN:
-            case MULTI_STRING_ONE:
-            case MULTI_STRING_TWO:
-            case MULTI_STRING_THREE:
                 return true;
             default:
                 return false;

@@ -31,6 +31,7 @@ import javax.servlet.ServletContext;
 
 import org.forgerock.guice.core.GuiceModule;
 import org.forgerock.guice.core.InjectorHolder;
+import org.forgerock.http.Client;
 import org.forgerock.json.JsonValue;
 import org.forgerock.openam.audit.context.AMExecutorServiceFactory;
 import org.forgerock.openam.auditors.SMSAuditFilter;
@@ -56,6 +57,7 @@ import org.forgerock.openam.identity.idm.AMIdentityRepositoryFactory;
 import org.forgerock.openam.oauth2.OAuth2Constants;
 import org.forgerock.openam.session.SessionGuiceModule;
 import org.forgerock.openam.shared.concurrency.ThreadMonitor;
+import org.forgerock.openam.shared.guice.CloseableHttpClientProvider;
 import org.forgerock.openam.sm.SMSConfigurationFactory;
 import org.forgerock.openam.sm.ServerGroupConfiguration;
 import org.forgerock.openam.sm.config.ConsoleConfigHandler;
@@ -72,6 +74,7 @@ import org.forgerock.util.promise.NeverThrowsException;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provider;
 import com.google.inject.Provides;
+import com.google.inject.Scopes;
 import com.google.inject.TypeLiteral;
 import com.google.inject.assistedinject.FactoryModuleBuilder;
 import com.google.inject.multibindings.Multibinder;
@@ -184,6 +187,10 @@ public class CoreGuiceModule extends AbstractModule {
         Multibinder.newSetBinder(binder(), IdRepoCreationListener.class);
 
         bind(ConsoleConfigHandler.class).to(ConsoleConfigHandlerImpl.class);
+
+        bind(Client.class)
+                .annotatedWith(Names.named("LogWriter"))
+                .toProvider(CloseableHttpClientProvider.class).in(Scopes.SINGLETON);
 
         /* Entitlement bindings */
         install(new FactoryModuleBuilder()

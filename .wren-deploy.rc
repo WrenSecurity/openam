@@ -1,0 +1,2 @@
+export MAVEN_PACKAGE="openam"
+export QT_QPA_PLATFORM="offscreen"

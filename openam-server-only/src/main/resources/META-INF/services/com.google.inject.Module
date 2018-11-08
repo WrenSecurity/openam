@@ -13,5 +13,4 @@
 #
 # Copyright 2016 ForgeRock AS.
 #
-
-dj.backend.type=pdb
+org.forgerock.openam.guice.FederationGuiceModule

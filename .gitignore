@@ -2,6 +2,9 @@ target/
 dependency-reduced-pom.xml
 openam-ui/openam-ui-ria/npm-debug.log.*
 
+# Versions maven plugin 
+*.versionsBackup
+
 # Editor generated files
 *.iml
 .idea/

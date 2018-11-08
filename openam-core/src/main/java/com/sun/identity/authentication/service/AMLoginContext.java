@@ -679,11 +679,7 @@ public class AMLoginContext {
             failureReason = INVALID_PASSWORD;
             if (accountLocked) {
                 authContext.getLoginState().setErrorCode(AMAuthErrorCode.AUTH_USER_LOCKED);
-                if (failedUserId != null) {
-                    authContext.getLoginState().logFailed(failedUserId, "LOCKEDOUT");
-                } else {
-                    authContext.getLoginState().logFailed("LOCKEDOUT");
-                }
+                authContext.getLoginState().logFailed(bundle.getString("lockOut"), "LOCKEDOUT");
                 auditor.auditLoginFailure(authContext.getLoginState(), LOCKED_OUT);
             } else {
                 authContext.getLoginState().setErrorCode(AMAuthErrorCode.AUTH_LOGIN_FAILED);

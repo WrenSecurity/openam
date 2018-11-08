@@ -26,15 +26,15 @@
  */
 
 /*
- * Portions Copyrighted [2011] [ForgeRock AS]
+ * Portions Copyrighted 2011-2016 ForgeRock AS.
  */
 package com.sun.identity.entitlement.opensso;
 
 import java.util.Set;
 
 import com.sun.identity.entitlement.util.NetworkMonitor;
-import com.sun.identity.shared.stats.StatsListener;
 import com.sun.identity.shared.stats.Stats;
+import com.sun.identity.shared.stats.StatsListener;
 
 public class EntitlementsStats implements StatsListener {
 	
@@ -58,17 +58,6 @@ public class EntitlementsStats implements StatsListener {
 			nm.reset();
 			sb.append("\n-----------------------------");
 		}
-		// Cache statistics
-		sb.append("\nPolicyCache: ");
-		sb.append(OpenSSOIndexStore.getNumCachedPolicies());
-		sb.append("\nReferralCache: ");
-		sb.append(OpenSSOIndexStore.getNumCachedReferrals());
-		sb.append("\nTotal policies: ");
-		sb.append(DataStore.getNumberOfPolicies());
-		sb.append("\nTotal referrals: ");
-		sb.append(DataStore.getNumberOfReferrals());
-
-        sb.append("\n-----------------------------\n");
 		stats.record(sb.toString());
 	}
 }

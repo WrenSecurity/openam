@@ -1,4 +1,4 @@
-/**
+/*
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
  *
  * Copyright (c) 2008 Sun Microsystems Inc. All Rights Reserved
@@ -24,50 +24,53 @@
  *
  * $Id: EmbeddedStatus.java,v 1.2 2008/09/19 23:36:43 beomsuk Exp $
  *
+ * Portions Copyrighted 2011-2017 ForgeRock AS.
  */
 
-/*
- * Portions Copyrighted [2011] [ForgeRock AS]
- */
 package com.sun.identity.cli.serverconfig;
 
+import java.io.ByteArrayOutputStream;
+import java.io.OutputStream;
+import java.text.MessageFormat;
+import java.util.logging.Level;
+
+import com.iplanet.am.util.SystemProperties;
 import com.iplanet.sso.SSOToken;
-import com.sun.identity.cli.IArgument;
 import com.sun.identity.cli.CLIException;
 import com.sun.identity.cli.ExitCodes;
+import com.sun.identity.cli.IArgument;
 import com.sun.identity.cli.IOutput;
 import com.sun.identity.cli.LogWriter;
 import com.sun.identity.cli.RequestContext;
 import com.sun.identity.log.Logger;
-import com.sun.identity.setup.EmbeddedOpenDS;
-import java.io.ByteArrayOutputStream;
-import java.text.MessageFormat;
-import java.util.logging.Level;
+import com.sun.identity.setup.SetupConstants;
+import com.sun.identity.shared.debug.Debug;
+import org.opends.server.tools.dsreplication.ReplicationCliMain;
 
 /**
  * Delete a server instance.
  */
 public class EmbeddedStatus extends ServerConfigBase {
     private static final String SERVER_CONFIG_XML_FILE = "serverconfigxml";
-    
+
     /**
      * Services a Commandline Request.
      *
      * @param rc Request Context.
      * @throws CLIException if the request cannot serviced.
      */
-    public void handleRequest(RequestContext rc) 
-        throws CLIException {
+    public void handleRequest(RequestContext rc)
+            throws CLIException {
         super.handleRequest(rc);
         ldapLogin();
         SSOToken adminSSOToken = getAdminSSOToken();
         IOutput outputWriter = getOutputWriter();
         String[] params = {};
-        
-System.out.println("RYA : EMB: ");
+
+        System.out.println("RYA : EMB: ");
         try {
             writeLog(LogWriter.LOG_ACCESS, Level.INFO,
-                "ATTEMPT_EMBEDDED_STATUS", params);
+                    "ATTEMPT_EMBEDDED_STATUS", params);
 
             String port = getStringOptionValue(IArgument.EMBEDDED_PORT);
             String passwd = getAdminPassword();
@@ -79,30 +82,66 @@ System.out.println("RYA : EMB: ");
             ByteArrayOutputStream boe = new ByteArrayOutputStream();
 
             Logger.token.set(adminSSOToken);
-            int stat = EmbeddedOpenDS.getReplicationStatus(
-                           port, passwd, bos, boe);
+            int stat = getReplicationStatus(port, passwd, bos, boe);
             Logger.token.set(null);
 
             String str = bos.toString();
             String stre = boe.toString();
             String[] params1 = {Integer.toString(stat)};
             outputWriter.printMessage(
-                MessageFormat.format(getResourceString("embedded-status-status")
-                                      ,(Object[])params1));
+                    MessageFormat.format(getResourceString("embedded-status-status")
+                            ,(Object[])params1));
             outputWriter.printlnMessage("\n");
             outputWriter.printlnMessage(str);
             outputWriter.printlnMessage("\n");
             outputWriter.printlnMessage(stre);
             outputWriter.printlnMessage("\n");
-            
+
             writeLog(LogWriter.LOG_ACCESS, Level.INFO,
-                "SUCCEED_EMBEDDED_STATUS", params);
+                    "SUCCEED_EMBEDDED_STATUS", params);
         } catch (Exception e) {
             String[] args = {e.getMessage()};
             debugError("EmbeddedStatus.handleRequest", e);
             writeLog(LogWriter.LOG_ERROR, Level.INFO,
-                "FAILED_EMBEDDED_STATUS", args);
+                    "FAILED_EMBEDDED_STATUS", args);
             throw new CLIException(e,ExitCodes.REQUEST_CANNOT_BE_PROCESSED);
         }
+    }
+
+    public static int getReplicationStatus(String port, String passwd,
+            OutputStream oo, OutputStream err) {
+        Debug debug = Debug.getInstance(SetupConstants.DEBUG_NAME);
+        String baseDir = SystemProperties.get(SystemProperties.CONFIG_PATH);
+
+        String[] statusCmd = {
+                "status", "--no-prompt",
+                "-h", "localhost",
+                "-p", port,
+                "--adminUID", "admin",
+                "--adminPassword", passwd,
+                "-s",
+                "--configFile",
+                baseDir + "/opends/config/config.ldif",
+                "--noPropertiesFile"
+        };
+        if (debug.messageEnabled()) {
+            String dbgcmd = concat(statusCmd).replaceAll(passwd, "****");
+            debug.message("EmbeddedOpenDS:getReplicationStatus:exec dsreplication :"
+                    + dbgcmd);
+        }
+        int ret = ReplicationCliMain.mainCLI(statusCmd, false, oo, err);
+        if (debug.messageEnabled()) {
+            debug.message("EmbeddedOpenDS:getReplicationStatus:dsreplication ret:"
+                    + ret);
+        }
+        return ret;
+    }
+
+    private static String concat(String[] args) {
+        String ret = "";
+        for (String arg : args)
+            ret += arg + " ";
+
+        return ret;
     }
 }

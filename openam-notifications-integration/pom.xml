@@ -24,6 +24,8 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>openam-notifications-integration</artifactId>
+    <name>Wren:AM - Notifications Guice Integration</name>
+    <description>Guice bindings for Wren:AM notifications.</description>
 
     <dependencies>
         <dependency>

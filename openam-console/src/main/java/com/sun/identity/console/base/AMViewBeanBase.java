@@ -28,56 +28,12 @@
  */
 package com.sun.identity.console.base;
 
-import com.iplanet.am.util.BrowserEncoding;
-import com.iplanet.am.util.SystemProperties;
-import com.iplanet.jato.NavigationException;
-import com.iplanet.jato.RequestContext;
-import com.iplanet.jato.model.ModelControlException;
-import com.iplanet.jato.util.Encoder;
-import com.iplanet.jato.view.DisplayField;
-import com.iplanet.jato.view.View;
-import com.iplanet.jato.view.ViewBean;
-import com.iplanet.jato.view.event.ChildDisplayEvent;
-import com.iplanet.jato.view.event.DisplayEvent;
-import com.iplanet.jato.view.event.RequestInvocationEvent;
-import com.iplanet.jato.view.html.Button;
-import com.iplanet.jato.view.html.StaticTextField;
-import com.iplanet.jato.view.html.OptionList;
-import com.iplanet.sso.SSOException;
-import com.iplanet.sso.SSOToken;
-import com.iplanet.sso.SSOTokenListener;
-import com.iplanet.sso.SSOTokenEvent;
-import com.iplanet.sso.SSOTokenListenersUnsupportedException;
-import com.sun.identity.console.base.model.AMAdminConstants;
-import com.sun.identity.console.base.model.AMFormatUtils;
-import com.sun.identity.console.base.model.AMI18NUtils;
-import com.sun.identity.console.base.model.AMModel;
-import com.sun.identity.console.base.model.AMModelBase;
-import com.sun.identity.console.components.view.html.SerializedField;
-import com.sun.identity.console.delegation.model.DelegationConfig;
-import com.sun.identity.shared.Constants;
-import com.sun.identity.shared.datastruct.OrderedSet;
-import com.sun.identity.shared.debug.Debug;
-import com.sun.identity.sm.SMSSchema;
-import com.sun.web.ui.model.CCActionTableModelInterface;
-import com.sun.web.ui.common.CCPrivateConfiguration;
-import com.sun.web.ui.view.alert.CCAlertInline;
-import com.sun.web.ui.view.html.CCButton;
-import com.sun.web.ui.view.html.CCCheckBox;
-import com.sun.web.ui.view.html.CCDropDownMenu;
-import com.sun.web.ui.view.html.CCHref;
-import com.sun.web.ui.view.html.CCLabel;
-import com.sun.web.ui.view.html.CCRadioButton;
-import com.sun.web.ui.view.html.CCStaticTextField;
-import com.sun.web.ui.view.html.CCTextField;
-import com.sun.web.ui.view.table.CCActionTable;
-import com.sun.web.ui.common.CCI18N;
-
-import java.io.UnsupportedEncodingException;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.Serializable;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.rmi.server.UID;
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -91,11 +47,59 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import java.util.concurrent.TimeUnit;
 
+import com.iplanet.am.util.BrowserEncoding;
+import com.iplanet.am.util.SystemProperties;
+import com.iplanet.dpro.session.SessionException;
+import com.iplanet.dpro.session.SessionID;
+import com.iplanet.dpro.session.service.SessionService;
+import com.iplanet.dpro.session.watchers.listeners.SessionDeletionListener;
+import com.iplanet.jato.NavigationException;
+import com.iplanet.jato.RequestContext;
+import com.iplanet.jato.model.ModelControlException;
+import com.iplanet.jato.util.Encoder;
+import com.iplanet.jato.view.DisplayField;
+import com.iplanet.jato.view.View;
+import com.iplanet.jato.view.ViewBean;
+import com.iplanet.jato.view.event.ChildDisplayEvent;
+import com.iplanet.jato.view.event.DisplayEvent;
+import com.iplanet.jato.view.event.RequestInvocationEvent;
+import com.iplanet.jato.view.html.Button;
+import com.iplanet.jato.view.html.OptionList;
+import com.iplanet.jato.view.html.StaticTextField;
+import com.iplanet.sso.SSOToken;
+import com.sun.identity.console.base.model.AMAdminConstants;
+import com.sun.identity.console.base.model.AMFormatUtils;
+import com.sun.identity.console.base.model.AMI18NUtils;
+import com.sun.identity.console.base.model.AMModel;
+import com.sun.identity.console.base.model.AMModelBase;
+import com.sun.identity.console.components.view.html.SerializedField;
+import com.sun.identity.console.delegation.model.DelegationConfig;
+import com.sun.identity.shared.Constants;
+import com.sun.identity.shared.datastruct.OrderedSet;
+import com.sun.identity.shared.debug.Debug;
+import com.sun.identity.sm.SMSSchema;
+import com.sun.web.ui.common.CCI18N;
+import com.sun.web.ui.common.CCPrivateConfiguration;
+import com.sun.web.ui.model.CCActionTableModelInterface;
+import com.sun.web.ui.view.alert.CCAlertInline;
+import com.sun.web.ui.view.html.CCButton;
+import com.sun.web.ui.view.html.CCCheckBox;
+import com.sun.web.ui.view.html.CCDropDownMenu;
+import com.sun.web.ui.view.html.CCHref;
+import com.sun.web.ui.view.html.CCLabel;
+import com.sun.web.ui.view.html.CCRadioButton;
+import com.sun.web.ui.view.html.CCStaticTextField;
+import com.sun.web.ui.view.html.CCTextField;
+import com.sun.web.ui.view.table.CCActionTable;
+import org.forgerock.guava.common.cache.CacheBuilder;
+import org.forgerock.guava.common.cache.CacheLoader;
+import org.forgerock.guava.common.cache.LoadingCache;
+import org.forgerock.guice.core.InjectorHolder;
 import org.forgerock.http.util.Uris;
 import org.forgerock.openam.console.base.ConsoleViewBeanBase;
+import org.forgerock.openam.cts.continuous.watching.SessionWatchingNotSupported;
 import org.forgerock.openam.utils.IOUtils;
 import org.owasp.esapi.ESAPI;
 
@@ -807,7 +811,7 @@ public abstract class AMViewBeanBase extends ConsoleViewBeanBase {
             if (strAttr.length()>=MAX_PG_SESSION_SIZE) {
                 SSOToken ssoToken = getModel().getUserSSOToken();
                 String ssoTokenID = ssoToken.getTokenID().toString();
-                Map store = SessionStore.getSessionStore(ssoToken);
+                Map store = SessionStore.INSTANCE.getSessionStore(ssoToken);
                 Map attributes = getPageSessionAttributes();
                 store.put(vbUID, attributes);
 
@@ -833,14 +837,12 @@ public abstract class AMViewBeanBase extends ConsoleViewBeanBase {
     protected void deserializePageAttributes() {
         super.deserializePageAttributes();
         pageSessionInSessionStore = false;
-        String ssoid = (String)super.getPageSessionAttribute(PG_SESSION_SSO_ID);
+        String ssoid = (String) super.getPageSessionAttribute(PG_SESSION_SSO_ID);
         if (ssoid != null) {
-            Map store = SessionStore.getSessionStore(ssoid);
-
-            // store can be null, if sso token has expired.
-            if (store != null) {
-                Map savedAttr = (Map)store.get(
-                    (String)super.getPageSessionAttribute(PG_SESSION_ATTR_ID));
+            Map store = SessionStore.INSTANCE.getSessionStore(ssoid);
+            // store can be empty, if sso token has expired.
+            if (!store.isEmpty()) {
+                Map savedAttr = (Map) store.get(super.getPageSessionAttribute(PG_SESSION_ATTR_ID));
                 super.setPageSessionAttributes(savedAttr);
             }
         }
@@ -848,9 +850,8 @@ public abstract class AMViewBeanBase extends ConsoleViewBeanBase {
 
     protected void setPageSessionAttributes(Map value) {
         if (pageSessionInSessionStore) {
-            String ssoTokenID = getModel().getUserSSOToken()
-                .getTokenID().toString();
-            Map store = SessionStore.getSessionStore(ssoTokenID);
+            String ssoTokenID = getModel().getUserSSOToken().getTokenID().toString();
+            Map store = SessionStore.INSTANCE.getSessionStore(ssoTokenID);
             store.put(vbUID, value);
             super.getPageSessionAttributes().put(PG_SESSION_ATTR_ID, vbUID);
         } else {
@@ -861,10 +862,9 @@ public abstract class AMViewBeanBase extends ConsoleViewBeanBase {
     protected Map getPageSessionAttributes() {
         Map attributes;
         if (pageSessionInSessionStore) {
-            String ssoTokenID = getModel().getUserSSOToken()
-                .getTokenID().toString();
-            Map store = SessionStore.getSessionStore(ssoTokenID);
-            attributes = (Map)store.get(vbUID);
+            String ssoTokenID = getModel().getUserSSOToken().getTokenID().toString();
+            Map store = SessionStore.INSTANCE.getSessionStore(ssoTokenID);
+            attributes = (Map) store.get(vbUID);
         } else {
             attributes = super.getPageSessionAttributes();
         }
@@ -882,44 +882,57 @@ public abstract class AMViewBeanBase extends ConsoleViewBeanBase {
      * size exceeds MAX_PG_SESSION_SIZE, which is currently set to little
      * less than 2KB.
      */
-    private static class SessionStore {
-        static private Map stores = new HashMap();
+    private enum SessionStore {
+        INSTANCE;
 
-        static private SSOTokenListener listener = new SSOTokenListener() {
-            public void ssoTokenChanged(SSOTokenEvent event) {
-                try {
-                    switch(event.getType())  {
-                        case SSOTokenEvent.SSO_TOKEN_IDLE_TIMEOUT:
-                        case SSOTokenEvent.SSO_TOKEN_MAX_TIMEOUT:
-                        case SSOTokenEvent.SSO_TOKEN_DESTROY:
-                            SSOToken token = event.getToken();
-                            stores.remove(token.getTokenID().toString());
+        private final SessionService sessionService;
+        private final LoadingCache<String, Map<?, ?>> cache = CacheBuilder.newBuilder()
+                .maximumSize(10)
+                .build(new CacheLoader<String, Map<?, ?>>() {
+                    @Override
+                    public Map<?, ?> load(String ssoTokenId) {
+                        Map<String, Map<?, ?>> store = new HashMap<>();
+                        try {
+                            sessionService.notifyListenerFor(new SessionID(ssoTokenId), listener);
+                            cache.put(ssoTokenId, store);
+                        } catch (SessionException | SessionWatchingNotSupported e) {
+                            debug.message("SessionStore.getSessionStore: {}", e.getMessage());
+                        }
+                        return store;
                     }
-                } catch(SSOException ssoe) {
-                    debug.warning("SessionStore.ssoTokenChanged", ssoe);
-                }
+                });
+        private final SessionDeletionListener listener = new SessionDeletionListener() {
+            @Override
+            public void sessionDeleted(String sessionId) {
+                cache.invalidate(sessionId);
+            }
+
+            @Override
+            public void connectionLost() {
+                // We rely on the cache to remove sessions when the connection is down
+            }
+
+            @Override
+            public void initiationFailed() {
+                // We rely on the cache to remove sessions when the connection is down
             }
         };
 
-        static Map getSessionStore(SSOToken ssoToken) {
-            String storeKey = ssoToken.getTokenID().toString();
-            Map store =  getSessionStore(storeKey);
-            if (store == null) {
-                store = new HashMap();
-                try {
-                    ssoToken.addSSOTokenListener(listener);
-                    stores.put(storeKey, store);
-                } catch (SSOTokenListenersUnsupportedException ex) {
-                    debug.message("SessionStore.getSessionStore: {}", ex.getMessage());
-                } catch(SSOException ssoe) {
-                    debug.warning("SessionStore.getSessionStore", ssoe);
-                }
+        SessionStore() {
+            sessionService = InjectorHolder.getInstance(SessionService.class);
+            try {
+                sessionService.registerListener(listener);
+            } catch (SessionWatchingNotSupported e) {
+                debug.message("SessionStore.getSessionStore: {}", e.getMessage());
             }
-            return store;
         }
 
-        static Map getSessionStore(String storeKey) {
-            return (Map)stores.get(storeKey);
+        private Map<?, ?> getSessionStore(SSOToken ssoToken) {
+            return getSessionStore(ssoToken.getTokenID().toString());
+        }
+
+        private Map<?, ?> getSessionStore(String ssoTokenId) {
+            return cache.getUnchecked(ssoTokenId);
         }
     }
 

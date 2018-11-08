@@ -26,34 +26,57 @@
  *
  * Portions Copyrighted 2011-2016 ForgeRock AS.
  */
+
 package com.sun.identity.console.base;
 
-import static org.forgerock.openam.utils.Time.*;
+import static org.forgerock.openam.utils.Time.currentTimeMillis;
 
-import com.iplanet.sso.SSOTokenListenersUnsupportedException;
-import com.sun.identity.shared.debug.Debug;
-import com.sun.identity.console.base.model.AMAdminConstants;
-import com.iplanet.sso.SSOException;
-import com.iplanet.sso.SSOToken;
-import com.iplanet.sso.SSOTokenEvent;
-import com.iplanet.sso.SSOTokenID;
-import com.iplanet.sso.SSOTokenListener;
-import com.sun.identity.shared.encode.Base64;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 
+import com.iplanet.dpro.session.SessionException;
+import com.iplanet.dpro.session.SessionID;
+import com.iplanet.dpro.session.service.SessionService;
+import com.iplanet.dpro.session.watchers.listeners.SessionDeletionListener;
+import com.iplanet.sso.SSOToken;
+import com.sun.identity.console.base.model.AMAdminConstants;
+import com.sun.identity.shared.debug.Debug;
+import com.sun.identity.shared.encode.Base64;
+import org.forgerock.guava.common.cache.Cache;
+import org.forgerock.guava.common.cache.CacheBuilder;
+import org.forgerock.guava.common.cache.CacheLoader;
+import org.forgerock.guava.common.cache.LoadingCache;
+import org.forgerock.guice.core.InjectorHolder;
+import org.forgerock.openam.cts.continuous.watching.SessionWatchingNotSupported;
+
 /**
  * This singleton class governs the tracking of page trail per user session.
  */
-public class PageTrailManager
-    implements SSOTokenListener
-{
-     private static Debug debug = Debug.getInstance(
-        AMAdminConstants.CONSOLE_DEBUG_FILENAME);
-     
-    private static PageTrailManager instance = new PageTrailManager();
-    private Map mapTokenIDs = new HashMap(100);
+public class PageTrailManager {
+
+    private static Debug debug = Debug.getInstance(AMAdminConstants.CONSOLE_DEBUG_FILENAME);
+
+    private enum Holder {
+        INSTANCE;
+
+        private final PageTrailManager pageTrailManager = new PageTrailManager();
+        private final SessionService sessionService;
+        private final LoadingCache<String, Map<String, PageTrail>> cache;
+        private final CacheInvalidationListener listener = new CacheInvalidationListener();
+
+        Holder() {
+            sessionService = InjectorHolder.getInstance(SessionService.class);
+            cache = CacheBuilder.newBuilder()
+                    .maximumSize(100)
+                    .build(new PageTrailCacheLoader(sessionService, listener));
+            try {
+                sessionService.registerListener(listener);
+            } catch (SessionWatchingNotSupported e) {
+                debug.message("SessionStore.getSessionStore: {}", e.getMessage());
+            }
+        }
+    }
 
     /**
      * The generated random string is used to cache page trail object when
@@ -66,7 +89,7 @@ public class PageTrailManager
     }
 
     public static PageTrailManager getInstance() {
-        return instance;
+        return Holder.INSTANCE.pageTrailManager;
     }
 
     /**
@@ -77,30 +100,13 @@ public class PageTrailManager
      * @return an unique key for retrieve this object in future
      */
     public String registerTrail(SSOToken token, PageTrail pageTrail) {
-        String randomStr = "";
-        try {
-            String key = token.getTokenID().toString();
+        String randomStr;
+        String key = token.getTokenID().toString();
 
-            synchronized (mapTokenIDs) {
-                Map map = (Map) mapTokenIDs.get(key);
-
-                if (map == null) {
-                    map = new HashMap(10);
-                    token.addSSOTokenListener(this);
-                }
-
-                randomStr = getRandomString();
-                map.put(randomStr, pageTrail);
-                mapTokenIDs.put(key, map);
-            }
-        } catch (SSOTokenListenersUnsupportedException ex) {
-            // NB. If SSOTokenListenersUnsupportedException is thrown, mapTokenIDs must not
-            // store reference to token ID as this will cause a memory leak.
-            debug.message("PageTrailManager.registerTrail(): could not add sso listener: {}", ex.getMessage());
-            randomStr = "";
-        } catch (SSOException ssoe) {
-            debug.warning("PageTrailManager.registerTrail()", ssoe);
-            randomStr = "";
+        synchronized (Holder.INSTANCE) {
+            Map<String, PageTrail> entry = Holder.INSTANCE.cache.getUnchecked(key);
+            randomStr = getRandomString();
+            entry.put(randomStr, pageTrail);
         }
         return randomStr;
     }
@@ -113,42 +119,11 @@ public class PageTrailManager
      * @return page trail object if it is found. otherwises, return null
      */
     public PageTrail getTrail(SSOToken token, String cacheID) {
-        Map map = (Map)mapTokenIDs.get(token.getTokenID().toString());
-        return (map != null) ? (PageTrail)map.get(cacheID) : null;
-    }
-
-    /**
-     * Gets notification when single sign on token changes state.
-     *
-     * @param evt single sign on token event
-     */
-    public void ssoTokenChanged(SSOTokenEvent evt) {
-        try {
-            int type = evt.getType();
-                                                                                
-            switch (type) {
-            case SSOTokenEvent.SSO_TOKEN_IDLE_TIMEOUT:
-            case SSOTokenEvent.SSO_TOKEN_MAX_TIMEOUT:
-            case SSOTokenEvent.SSO_TOKEN_DESTROY:
-                SSOToken token = evt.getToken();
-                clearAllTrails(token.getTokenID());
-                break;
-            }
-        } catch (SSOException ssoe) {
-            debug.warning("PageTrailManager.ssoTokenChanged()", ssoe);
-        }
-    }
-
-    /**
-     * Clears all registered page trails of a given single sign on token ID
-     *
-     * @param tokenID single sign on token ID
-     */
-    protected void clearAllTrails(SSOTokenID tokenID) {
-        boolean removed = false;
-        String key = tokenID.toString();
-        synchronized(mapTokenIDs) {
-            removed = (mapTokenIDs.remove(key) != null);
+        Map<String, PageTrail> entry = Holder.INSTANCE.cache.getUnchecked(token.getTokenID().toString());
+        if (!entry.isEmpty()) {
+            return entry.get(cacheID);
+        } else {
+            return null;
         }
     }
 
@@ -164,5 +139,45 @@ public class PageTrailManager
         sb.append(currentTimeMillis());
         sb.append(Base64.encode(keyRandom));
         return (sb.toString());
+    }
+
+    private static final class PageTrailCacheLoader extends CacheLoader<String, Map<String, PageTrail>> {
+
+        private final SessionService sessionService;
+        private final SessionDeletionListener listener;
+
+        private PageTrailCacheLoader(SessionService sessionService, SessionDeletionListener listener) {
+            this.sessionService = sessionService;
+            this.listener = listener;
+        }
+
+        @Override
+        public Map<String, PageTrail> load(String ssoTokenId) throws Exception {
+            Map<String, PageTrail> store = new HashMap<>(10);
+            try {
+                sessionService.notifyListenerFor(new SessionID(ssoTokenId), listener);
+            } catch (SessionException | SessionWatchingNotSupported e) {
+                debug.message("PageTrailManager.registerTrail: {}", e.getMessage());
+            }
+            return store;
+        }
+    }
+
+    private static final class CacheInvalidationListener implements SessionDeletionListener {
+
+        @Override
+        public void sessionDeleted(String sessionId) {
+            Holder.INSTANCE.cache.invalidate(sessionId);
+        }
+
+        @Override
+        public void connectionLost() {
+            // We rely on the cache to remove sessions when the connection is down
+        }
+
+        @Override
+        public void initiationFailed() {
+            // We rely on the cache to remove sessions when the connection is down
+        }
     }
 }

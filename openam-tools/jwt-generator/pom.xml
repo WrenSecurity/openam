@@ -13,6 +13,7 @@
  * information: "Portions copyright [year] [name of copyright owner]".
  *
  * Copyright 2015-2016 ForgeRock AS.
+ * Portions Copyright 2018 Wren Security.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -27,7 +28,7 @@
 
     <artifactId>jwt-generator</artifactId>
 
-    <name>OpenAM JWT generator</name>
+    <name>Wren:AM - JWT generator</name>
 
     <dependencies>
         <dependency>

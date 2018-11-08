@@ -27,7 +27,7 @@
  */
 
 /**
- * Portions Copyrighted 2014 ForgeRock AS
+ * Portions Copyrighted 2014-2017 ForgeRock AS.
  */
 
 package com.sun.identity.shared.debug;
@@ -41,66 +41,6 @@ package com.sun.identity.shared.debug;
  * </p>
  */
 public interface IDebug {
-
-    /**
-     * @deprecated use {@link DebugLevel} instead.
-     */
-    @Deprecated
-    public static final int OFF = DebugLevel.OFF.getLevel();
-
-    /**
-     * @deprecated use {@link DebugLevel} instead.
-     */
-    @Deprecated
-    public static final int ERROR = DebugLevel.ERROR.getLevel();
-
-    /**
-     * @deprecated use {@link DebugLevel} instead.
-     */
-    @Deprecated
-    public static final int WARNING = DebugLevel.WARNING.getLevel();
-
-    /**
-     * @deprecated use {@link DebugLevel} instead.
-     */
-    @Deprecated
-    public static final int MESSAGE = DebugLevel.MESSAGE.getLevel();
-
-    /**
-     * @deprecated use {@link DebugLevel} instead.
-     */
-    @Deprecated
-    public static final int ON = DebugLevel.ON.getLevel();
-
-    /**
-     * @deprecated use {@link DebugLevel} instead.
-     */
-    @Deprecated
-    public static final String STR_OFF = DebugLevel.OFF.getName();
-
-    /**
-     * @deprecated use {@link DebugLevel} instead.
-     */
-    @Deprecated
-    public static final String STR_ERROR = DebugLevel.ERROR.getName();
-
-    /**
-     * @deprecated use {@link DebugLevel} instead.
-     */
-    @Deprecated
-    public static final String STR_WARNING = DebugLevel.WARNING.getName();
-
-    /**
-     * @deprecated use {@link DebugLevel} instead.
-     */
-    @Deprecated
-    public static final String STR_MESSAGE = DebugLevel.MESSAGE.getName();
-
-    /**
-     * @deprecated use {@link DebugLevel} instead.
-     */
-    @Deprecated
-    public static final String STR_ON = DebugLevel.ON.getName();
 
     /**
      * Returns the name of the IDebug instance. The value is exactly equal

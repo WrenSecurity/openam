@@ -1,7 +1,7 @@
 /*
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
  *
- * Copyright 2011-2016 ForgeRock AS.
+ * Copyright 2011-2017 ForgeRock AS.
  * Copyright 2011 Cybernetica AS.
  * 
  * The contents of this file are subject to the terms
@@ -110,6 +110,7 @@ public class OAuthParam {
     public final static String PARAM_LOGGEDOUT = "loggedout";
     public final static String PARAM_LOGOUT_URL = "logoutURL"; 
     public final static String LOGOUT_FORM = "logoutForm";
+    public final static String PARAM_LOGOUT_REALM = "OAuth2logoutRealm";
 
     //OpenID Connect
     public final static String ID_TOKEN = "id_token";

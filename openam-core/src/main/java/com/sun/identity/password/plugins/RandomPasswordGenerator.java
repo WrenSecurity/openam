@@ -24,10 +24,7 @@
  *
  * $Id: RandomPasswordGenerator.java,v 1.2 2008/06/25 05:43:41 qcheng Exp $
  *
- */
-
-/*
- * Portions Copyrighted 2011 ForgeRock AS
+ * Portions Copyrighted 2011-2017 ForgeRock AS.
  */
 
 package com.sun.identity.password.plugins;

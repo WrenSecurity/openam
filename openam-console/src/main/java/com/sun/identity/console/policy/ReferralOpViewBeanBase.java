@@ -1,4 +1,4 @@
-/**
+/*
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
  *
  * Copyright (c) 2007 Sun Microsystems Inc. All Rights Reserved
@@ -24,6 +24,7 @@
  *
  * $Id: ReferralOpViewBeanBase.java,v 1.2 2008/06/25 05:43:04 qcheng Exp $
  *
+ * Portions Copyrighted 2016 ForgeRock AS.
  */
 
 package com.sun.identity.console.policy;
@@ -253,7 +254,6 @@ public abstract class ReferralOpViewBeanBase
         String cacheID = (String)getPageSessionAttribute(
             ProfileViewBeanBase.PG_SESSION_POLICY_CACHE_ID);
         if (cacheID != null) {
-            PolicyCache cache = PolicyCache.getInstance();
             PolicyModel model = (PolicyModel)getModel();
             policy = model.getCachedPolicy(cacheID);
         }

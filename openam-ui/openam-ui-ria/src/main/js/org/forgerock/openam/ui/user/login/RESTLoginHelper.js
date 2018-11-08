@@ -11,7 +11,7 @@
  * Header, with the fields enclosed by brackets [] replaced by your own identifying
  * information: "Portions copyright [year] [name of copyright owner]".
  *
- * Portions copyright 2011-2016 ForgeRock AS.
+ * Portions copyright 2011-2017 ForgeRock AS.
  */
 
 define([
@@ -130,7 +130,7 @@ define([
         const promise = $.Deferred();
         let context = "";
 
-        const goto = query.parseParameters().goto;
+        const goto = query.parseParameters(URIUtils.getCurrentFragmentQueryString()).goto;
 
         if (goto) {
             AuthNService.validateGotoUrl(goto).then((data) => {

@@ -24,6 +24,11 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>openam-auth-amster</artifactId>
+    <name>Wren:AM - Amster Login Module</name>
+    <description>
+        Provides a method for the Amster CLI utility to authenticate with Wren:AM.
+    </description>
+
     <dependencies>
         <dependency>
             <groupId>org.forgerock.openam</groupId>

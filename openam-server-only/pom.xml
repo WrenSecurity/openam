@@ -12,7 +12,8 @@
  * Header, with the fields enclosed by brackets [] replaced by your own identifying
  * information: "Portions copyright [year] [name of copyright owner]".
  *
- * Copyright 2011-2016 ForgeRock AS.
+ * Copyright 2011-2017 ForgeRock AS.
+ * Portions Copyright 2018 Wren Security.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
@@ -25,29 +26,21 @@
     </parent>
 
     <!-- Component Definition -->
-    <name>OpenAM Server Only</name>
-    <description>OpenAM Server Only Component</description>
+    <name>Wren:AM - Server Only</name>
+    <description>Wren:AM Server Only Component</description>
     <artifactId>openam-server-only</artifactId>
     <packaging>war</packaging>
 
     <properties>
-        <!-- Default settings for standard embedded dj. -->
-        <dj.backend.type>je</dj.backend.type>
         <!-- By default this property is empty so as not to include the SecurID auth module. -->
         <auth.securID.xml />
-        <!-- Default settings for the exclusion list to use for creating the opendj zip file. -->
-        <exclusion.list.filename>opendj_exclusion_list</exclusion.list.filename>
-        <!-- Default folder to use for pulling in third party distribution legal notices. -->
-        <third.party.legal.directory>legal</third.party.legal.directory>
-        <!-- Default value for whether the build is running in oem mode -->
-        <is.oem.build>false</is.oem.build>
 
         <full.version.information>@VERSION@ Build @REVISION@ (@DATESTAMP@)</full.version.information>
     </properties>
 
     <!-- Build -->
     <build>
-        <finalName>OpenAM-ServerOnly-${project.version}</finalName>
+        <finalName>Wren:AM-ServerOnly-${project.version}</finalName>
         <plugins>
             <!-- OpenDJ 3.0: Pre-Pre-Packaging Step to download required Pre-Packaging Resources-->
             <plugin>
@@ -161,10 +154,6 @@
 
                                 <property name="federation.xml.dir" value="${project.basedir}/../openam-federation/OpenFM/src/main/resources/xml" />
 
-                                <property name="exclusion.list" value="${exclusion.list.filename}" />
-
-                                <property name="is.oem" value="${is.oem.build}" />
-
                                 <ant antfile="${project.basedir}/openam-server-prepare-war.xml">
                                     <target name="openam-server-prepare-war" />
                                 </ant>
@@ -203,10 +192,10 @@
                     </packagingExcludes>
                     <archive>
                         <manifestEntries>
-                            <Specification-Title>OpenAM Server</Specification-Title>
+                            <Specification-Title>Wren:AM Server</Specification-Title>
                             <Specification-Version>${project.version} - ${maven.build.timestamp}</Specification-Version>
-                            <Specification-Vendor>ForgeRock</Specification-Vendor>
-                            <Implementation-Title>OpenAM Server</Implementation-Title>
+                            <Specification-Vendor>Wren Security</Specification-Vendor>
+                            <Implementation-Title>Wren:AM Server</Implementation-Title>
                             <Implementation-Version>${project.version} - ${maven.build.timestamp}
                             </Implementation-Version>
                             <Implementation-Vendor>ForgeRock</Implementation-Vendor>
@@ -303,14 +292,6 @@
                             <targetPath>legal-notices</targetPath>
                         </webResource>
                         <webResource>
-                            <!-- Copy all third-party licences too. -->
-                            <directory>${project.parent.basedir}/${third.party.legal.directory}</directory>
-                            <includes>
-                                <include>**/**</include>
-                            </includes>
-                            <targetPath>legal-notices</targetPath>
-                        </webResource>
-                        <webResource>
                             <!-- More third party licenses... -->
                             <directory>${project.parent.basedir}/license</directory>
                             <includes>
@@ -373,7 +354,7 @@
                             <targetPath>WEB-INF/classes</targetPath>
                             <filtering>false</filtering>
                         </webResource>
-                        <!-- OpenDJ 3.0 Copy in an internal dependency needed by OpenAM -->
+                        <!-- OpenDJ 3.0 Copy in an internal dependency needed by Wren:AM -->
                         <webResource>
                             <directory>${project.build.directory}/repackage-opendj/opendj/lib</directory>
                             <includes>
@@ -457,14 +438,6 @@
     </build>
 
     <profiles>
-        <profile>
-            <id>with-oem</id>
-            <properties>
-                <exclusion.list.filename>opendj_oem_exclusion_list</exclusion.list.filename>
-                <third.party.legal.directory>legal-oem</third.party.legal.directory>
-                <is.oem.build>true</is.oem.build>
-            </properties>
-        </profile>
         <profile>
             <id>release</id>
             <dependencies>

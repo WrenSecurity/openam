@@ -25,9 +25,10 @@
  * $Id: SSOTokenSampleServlet.java,v 1.4 2008/10/29 03:16:04 veiming Exp $
  *
  */
-/**
- * Portions Copyrighted 2013-2016 ForgeRock AS.
+/*
+ * Portions Copyrighted 2013-2017 ForgeRock AS.
  */
+
 package com.sun.identity.samples.sso;
 
 import com.iplanet.sso.SSOException;

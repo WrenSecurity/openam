@@ -20,6 +20,7 @@ import static org.forgerock.oauth2.core.Utils.joinScope;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -36,6 +37,7 @@ import org.forgerock.oauth2.core.exceptions.ServerException;
 import org.forgerock.oauth2.core.exceptions.UnauthorizedClientException;
 import org.forgerock.openam.oauth2.OAuth2Constants;
 import org.forgerock.openam.oauth2.OAuth2UrisFactory;
+import org.forgerock.openam.utils.StringUtils;
 import org.forgerock.util.encode.Base64url;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -120,13 +122,13 @@ public class AuthorizationCodeGrantTypeHandler extends GrantTypeHandler {
                 throw new InvalidGrantException();
             }
 
-            if (!authorizationCode.getRedirectUri().equalsIgnoreCase(redirectUri)) {
+            if (!StringUtils.compareCaseInsensitiveString(authorizationCode.getRedirectUri(), redirectUri)) {
                 logger.error("Authorization code was issued with a different redirect URI, " + code + ". Expected, "
                         + authorizationCode.getRedirectUri() + ", actual, " + redirectUri);
                 throw new InvalidGrantException();
             }
 
-            if (!authorizationCode.getClientId().equalsIgnoreCase(clientRegistration.getClientId())) {
+            if (!StringUtils.compareCaseInsensitiveString(authorizationCode.getClientId(), clientRegistration.getClientId())) {
                 logger.error("Authorization Code was issued to a different client, " + code + ". Expected, "
                         + authorizationCode.getClientId() + ", actual, " + clientRegistration.getClientId());
                 throw new InvalidGrantException();

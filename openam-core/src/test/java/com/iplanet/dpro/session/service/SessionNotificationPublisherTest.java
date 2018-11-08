@@ -19,7 +19,9 @@ package com.iplanet.dpro.session.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.forgerock.json.test.assertj.AssertJJsonValueAssert.assertThat;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verifyZeroInteractions;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -30,6 +32,7 @@ import org.forgerock.openam.notifications.NotificationBroker;
 import org.forgerock.openam.notifications.NotificationsConfig;
 import org.forgerock.openam.notifications.Topic;
 import org.forgerock.openam.session.SessionEventType;
+import org.forgerock.openam.utils.HashUtil;
 import org.mockito.ArgumentCaptor;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -65,10 +68,14 @@ public class SessionNotificationPublisherTest {
         List<JsonValue> notifications = fireSessionEvent(SessionEventType.SESSION_CREATION);
 
         // Then
-        assertThat(notifications.get(0)).stringAt("tokenId").isEqualTo("masterSessionId");
-        assertThat(notifications.get(1)).stringAt("tokenId").isEqualTo("restrictedToken1");
-        assertThat(notifications.get(2)).stringAt("tokenId").isEqualTo("restrictedToken2");
-        assertThat(notifications.get(3)).stringAt("tokenId").isEqualTo("restrictedToken3");
+        assertThat(notifications.get(0)).stringAt("sessionuid")
+                .isEqualTo((HashUtil.generateBase64Hash("masterSessionId")));
+        assertThat(notifications.get(1)).stringAt("sessionuid")
+                .isEqualTo((HashUtil.generateBase64Hash("restrictedToken1")));
+        assertThat(notifications.get(2)).stringAt("sessionuid")
+                .isEqualTo((HashUtil.generateBase64Hash("restrictedToken2")));
+        assertThat(notifications.get(3)).stringAt("sessionuid")
+                .isEqualTo((HashUtil.generateBase64Hash("restrictedToken3")));
     }
 
     /**

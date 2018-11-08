@@ -13,6 +13,7 @@
  * information: "Portions copyright [year] [name of copyright owner]".
  *
  * Copyright 2015-2016 ForgeRock AS.
+ * Portions Copyright 2018 Wren Security.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
@@ -23,8 +24,8 @@
     <modelVersion>4.0.0</modelVersion>
 
     <!-- Component Definition -->
-    <name>OpenAM SAML2 Authentication Module</name>
-    <description>OpenAM Authentication SAML2</description>
+    <name>Wren:AM - SAML2 Authentication Module</name>
+    <description>Wren:AM Authentication SAML2</description>
     <artifactId>openam-auth-saml2</artifactId>
     <packaging>jar</packaging>
 

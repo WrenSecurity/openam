@@ -12,7 +12,8 @@
  * Header, with the fields enclosed by brackets [] replaced by your own identifying
  * information: "Portions copyright [year] [name of copyright owner]".
  *
- * Copyright 2015-2016 ForgeRock AS.
+ * Copyright 2015-2017 ForgeRock AS.
+ * Portions Copyright 2018 Wren Security.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
@@ -23,7 +24,7 @@
     </parent>
 
     <artifactId>openam-ui-ria</artifactId>
-    <name>OpenAM RIA Web UI</name>
+    <name>Wren:AM - RIA Web UI</name>
     <packaging>pom</packaging>
 
     <properties>
@@ -46,7 +47,7 @@
         </dependency>
         <dependency>
             <groupId>org.forgerock.commons.ui.libs</groupId>
-            <artifactId>selectize-non-standalone</artifactId>
+            <artifactId>selectize</artifactId>
             <version>0.12.1</version>
             <classifier>min</classifier>
             <type>js</type>
@@ -79,7 +80,7 @@
         </dependency>
         <dependency>
             <groupId>org.forgerock.commons.ui.libs</groupId>
-            <artifactId>jquery-nestingSortable</artifactId>
+            <artifactId>jquery.nesting-sortable</artifactId>
             <version>0.9.12</version>
             <type>js</type>
         </dependency>
@@ -333,8 +334,8 @@
                         <configuration>
                             <nodeVersion>v4.6.2</nodeVersion>
                             <npmVersion>3.10.9</npmVersion>
-                            <downloadRoot>http://maven.forgerock.org/repo/forgerock-third-party-virtual/</downloadRoot>
-                            <npmDownloadRoot>http://maven.forgerock.org/repo/api/npm/npm-virtual/npm/-/</npmDownloadRoot>
+                            <downloadRoot>https://nodejs.org/dist/</downloadRoot>
+                            <npmDownloadRoot>https://wrensecurity.jfrog.io/wrensecurity/api/npm/npm-virtual/npm/-/</npmDownloadRoot>
                         </configuration>
                     </execution>
                     <execution>
@@ -346,7 +347,7 @@
                         <configuration>
                             <arguments>install</arguments>
                             <environmentVariables>
-                                <PHANTOMJS_CDNURL>http://maven.forgerock.org/repo/forgerock-third-party-virtual</PHANTOMJS_CDNURL>
+                                <PHANTOMJS_CDNURL>https://bitbucket.org/ariya/phantomjs/downloads</PHANTOMJS_CDNURL>
                             </environmentVariables>
                         </configuration>
                     </execution>

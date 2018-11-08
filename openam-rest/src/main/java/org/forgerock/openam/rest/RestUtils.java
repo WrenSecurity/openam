@@ -184,19 +184,6 @@ final public class RestUtils {
         return false; 
     }
 
-    static public void hasPermission(final Context context) throws SSOException, IdRepoException, ForbiddenException {
-        SSOTokenManager mgr = SSOTokenManager.getInstance();
-        SSOToken ssotok = mgr.createSSOToken(getCookieFromServerContext(context));
-        mgr.validateToken(ssotok);
-        mgr.refreshSession(ssotok);
-        AMIdentity amIdentity = new AMIdentity(ssotok);
-
-        if (!(amIdentity.equals(AdminUserIdHolder.superAdminUserId))) {
-            debug.error("Unauthorized user.");
-            throw new ForbiddenException("Access Denied");
-        }
-    }
-
     /**
      * Signals to the handler that the current operation is unsupported.
      */

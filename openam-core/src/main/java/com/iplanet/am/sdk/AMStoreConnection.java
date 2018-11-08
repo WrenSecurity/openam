@@ -24,7 +24,7 @@
  *
  * $Id: AMStoreConnection.java,v 1.13 2009/01/28 05:34:47 ww203982 Exp $
  *
- * Portions Copyrighted 2011-2016 ForgeRock AS.
+ * Portions Copyrighted 2011-2017 ForgeRock AS.
  */
 
 package com.iplanet.am.sdk;

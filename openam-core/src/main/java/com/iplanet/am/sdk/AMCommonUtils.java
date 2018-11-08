@@ -24,7 +24,7 @@
  *
  * $Id: AMCommonUtils.java,v 1.7 2009/01/28 05:34:46 ww203982 Exp $
  *
- * Portions Copyright 2015 ForgeRock AS.
+ * Portions Copyright 2015-2017 ForgeRock AS.
  */
 
 package com.iplanet.am.sdk;

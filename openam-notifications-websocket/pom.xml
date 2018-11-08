@@ -24,6 +24,11 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>openam-notifications-websocket</artifactId>
+    <name>Wren:AM - Notifications WebSockets Integration</name>
+    <description>
+        Provides the ability to receive notifications via WebSocket from the Wren:AM Notifications
+        Broker.
+    </description>
 
     <dependencies>
         <dependency>

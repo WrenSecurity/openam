@@ -19,7 +19,6 @@ import static com.sun.identity.authentication.util.ISAuthConstants.*;
 import static org.forgerock.audit.events.AuthenticationAuditEventBuilder.Status.*;
 import static org.forgerock.openam.audit.AMAuditEventBuilderUtils.getTrackingIdFromSSOToken;
 import static org.forgerock.openam.audit.AuditConstants.AUTHENTICATION_TOPIC;
-import static org.forgerock.openam.audit.AuditConstants.AuthenticationFailureReason.*;
 import static org.forgerock.openam.audit.AuditConstants.Component.AUTHENTICATION;
 import static org.forgerock.openam.audit.AuditConstants.EntriesInfoFieldKey.*;
 import static org.forgerock.openam.audit.AuditConstants.EntriesInfoFieldKey.AUTH_LEVEL;
@@ -204,53 +203,6 @@ public class AuthenticationProcessEventAuditor extends AbstractAuthenticationEve
             return (ssoToken == null || name == null) ? null : ssoToken.getProperty(name);
         } catch (SSOException e) {
             return null;
-        }
-    }
-
-    private AuditConstants.AuthenticationFailureReason findFailureReason(LoginState loginState) {
-        String errorCode = loginState == null ? null : loginState.getErrorCode();
-
-        if (errorCode == null) {
-            return LOGIN_FAILED;
-        }
-
-        switch (errorCode) {
-            case AMAuthErrorCode.AUTH_PROFILE_ERROR:
-                return NO_USER_PROFILE;
-            case AMAuthErrorCode.AUTH_ACCOUNT_EXPIRED:
-                return ACCOUNT_EXPIRED;
-            case AMAuthErrorCode.AUTH_INVALID_PASSWORD:
-                return INVALID_PASSWORD;
-            case AMAuthErrorCode.AUTH_USER_INACTIVE:
-                return USER_INACTIVE;
-            case AMAuthErrorCode.AUTH_CONFIG_NOT_FOUND:
-                return NO_CONFIG;
-            case AMAuthErrorCode.AUTH_INVALID_DOMAIN:
-                return INVALID_REALM;
-            case AMAuthErrorCode.AUTH_ORG_INACTIVE:
-                return REALM_INACTIVE;
-            case AMAuthErrorCode.AUTH_TIMEOUT:
-                return LOGIN_TIMEOUT;
-            case AMAuthErrorCode.AUTH_MODULE_DENIED:
-                return MODULE_DENIED;
-            case AMAuthErrorCode.AUTH_MODULE_NOT_FOUND:
-                return MODULE_NOT_FOUND;
-            case AMAuthErrorCode.AUTH_USER_LOCKED:
-                return LOCKED_OUT;
-            case AMAuthErrorCode.AUTH_USER_NOT_FOUND:
-                return USER_NOT_FOUND;
-            case AMAuthErrorCode.AUTH_TYPE_DENIED:
-                return AUTH_TYPE_DENIED;
-            case AMAuthErrorCode.AUTH_MAX_SESSION_REACHED:
-                return MAX_SESSION_REACHED;
-            case AMAuthErrorCode.AUTH_SESSION_CREATE_ERROR:
-                return SESSION_CREATE_ERROR;
-            case AMAuthErrorCode.INVALID_AUTH_LEVEL:
-                return INVALID_LEVEL;
-            case AMAuthErrorCode.MODULE_BASED_AUTH_NOT_ALLOWED:
-                return MODULE_DENIED;
-            default:
-                return LOGIN_FAILED;
         }
     }
 }

@@ -24,7 +24,7 @@
  *
  * $Id: PersistentObject.java,v 1.8 2009/07/02 20:27:01 hengming Exp $
  *
- * Portions Copyrighted 2011-2015 ForgeRock AS.
+ * Portions Copyrighted 2011-2017 ForgeRock AS.
  */
 
 package com.iplanet.ums;

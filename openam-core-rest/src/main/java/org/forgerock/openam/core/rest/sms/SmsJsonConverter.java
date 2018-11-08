@@ -19,10 +19,7 @@ package org.forgerock.openam.core.rest.sms;
 import static org.forgerock.json.JsonValue.json;
 import static org.forgerock.json.JsonValue.object;
 
-import java.util.LinkedHashMap;
 import javax.inject.Inject;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
@@ -37,10 +34,12 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.iplanet.am.util.SystemProperties;
 import com.sun.identity.common.configuration.MapValueParser;
 import com.sun.identity.shared.debug.Debug;
 import com.sun.identity.shared.encode.Base64;
@@ -50,12 +49,13 @@ import com.sun.identity.sm.InvalidAttributeValueException;
 import com.sun.identity.sm.SMSException;
 import com.sun.identity.sm.ServiceSchema;
 import org.apache.commons.lang.StringUtils;
+import org.forgerock.guava.common.base.Supplier;
 import org.forgerock.guava.common.collect.BiMap;
 import org.forgerock.guava.common.collect.HashBiMap;
-import org.forgerock.json.resource.BadRequestException;
 import org.forgerock.json.JsonException;
 import org.forgerock.json.JsonPointer;
 import org.forgerock.json.JsonValue;
+import org.forgerock.json.resource.BadRequestException;
 import org.forgerock.json.resource.ResourceResponse;
 import org.forgerock.util.Pair;
 import org.w3c.dom.Document;
@@ -393,8 +393,8 @@ public class SmsJsonConverter {
 
     private boolean shouldBeIgnored(String attributeName) {
         final AttributeSchema attributeSchema = schema.getAttributeSchema(attributeName);
-        return (attributeSchema != null && StringUtils.isBlank(attributeSchema.getI18NKey())) || attributeName.equals
-                ("_type") || hiddenAttributeNames.contains(attributeName);
+        return (attributeSchema != null && StringUtils.isBlank(attributeSchema.getI18NKey()))
+                || attributeName.equals("_type") || hiddenAttributeNames.contains(attributeName) || attributeName.equals("AgentType");
     }
 
     private boolean shouldNotBeUpdated(String attributeName) {
@@ -510,15 +510,61 @@ public class SmsJsonConverter {
         }
     }
 
-    private static interface AttributeSchemaConverter {
+    private interface AttributeSchemaConverter {
         Object toJson(String value);
         String fromJson(Object json);
     }
 
+    private static class TagSwapableAttributeSchemaConverter {
+
+        private final Map<String, Supplier<String>> map = new HashMap<>();
+
+        private TagSwapableAttributeSchemaConverter() {
+            map.put("SERVER_PROTO", new Supplier<String>() {
+                @Override
+                public String get() {
+                    return SystemProperties.get("com.iplanet.am.server.protocol");
+                }
+            });
+            map.put("SERVER_HOST", new Supplier<String>() {
+                @Override
+                public String get() {
+                    return SystemProperties.get("com.iplanet.am.server.host");
+                }
+            });
+            map.put("SERVER_PORT", new Supplier<String>() {
+                @Override
+                public String get() {
+                    return SystemProperties.get("com.iplanet.am.server.port");
+                }
+            });
+            map.put("AM_SERVICES_DEPLOY_URI", new Supplier<String>() {
+                @Override
+                public String get() {
+                    return SystemProperties.get("com.iplanet.am.services.deploymentDescriptor");
+                }
+            });
+        }
+
+        public String toJson(String value) {
+            if (value != null && value.startsWith("@") && value.endsWith("@")) {
+                String key = value.substring(1, value.length() - 1);
+                if (map.containsKey(key)) {
+                    return map.get(key).get();
+                }
+            }
+            return value;
+        }
+    }
+
+    private static final TagSwapableAttributeSchemaConverter TAG_SWAPABLE_ATTRIBUTE_SCHEMA_CONVERTER
+            = new TagSwapableAttributeSchemaConverter();
+
     private static class StringAttributeSchemaValue implements AttributeSchemaConverter {
+
         @Override
         public Object toJson(String value) {
-            return value;
+            return TAG_SWAPABLE_ATTRIBUTE_SCHEMA_CONVERTER.toJson(value);
         }
 
         @Override
@@ -542,7 +588,7 @@ public class SmsJsonConverter {
     private static class BooleanAttributeSchemaValue implements AttributeSchemaConverter {
         @Override
         public Object toJson(String value) {
-            return Boolean.parseBoolean(value);
+            return Boolean.parseBoolean(TAG_SWAPABLE_ATTRIBUTE_SCHEMA_CONVERTER.toJson(value));
         }
 
         @Override
@@ -554,7 +600,7 @@ public class SmsJsonConverter {
     private static class DoubleAttributeSchemaValue implements AttributeSchemaConverter {
         @Override
         public Object toJson(String value) {
-            return Double.parseDouble(value);
+            return Double.parseDouble(TAG_SWAPABLE_ATTRIBUTE_SCHEMA_CONVERTER.toJson(value));
         }
 
         @Override
@@ -566,7 +612,7 @@ public class SmsJsonConverter {
     private static class IntegerAttributeSchemaValue implements AttributeSchemaConverter {
         @Override
         public Object toJson(String value) {
-            return Integer.parseInt(value);
+            return Integer.parseInt(TAG_SWAPABLE_ATTRIBUTE_SCHEMA_CONVERTER.toJson(value));
         }
 
         @Override
@@ -579,7 +625,8 @@ public class SmsJsonConverter {
         @Override
         public Object toJson(String value) {
             try {
-                return Base64.encode(value.getBytes("UTF-8"));
+                return Base64.encode(TAG_SWAPABLE_ATTRIBUTE_SCHEMA_CONVERTER.toJson(value)
+                        .getBytes("UTF-8"));
             } catch (UnsupportedEncodingException e) {
                 throw new IllegalStateException("Script encoding failed", e);
             }

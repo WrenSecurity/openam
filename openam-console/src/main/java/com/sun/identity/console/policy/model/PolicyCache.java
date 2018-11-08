@@ -26,22 +26,28 @@
  *
  * Portions Copyrighted 2011-2016 ForgeRock AS.
  */
+
 package com.sun.identity.console.policy.model;
 
-import static org.forgerock.openam.utils.Time.*;
+import static org.forgerock.openam.utils.Time.currentTimeMillis;
 
-import com.iplanet.sso.SSOTokenListenersUnsupportedException;
-import com.sun.identity.console.base.model.AMConsoleException;
-import com.sun.identity.console.base.model.AMModelBase;
-import com.iplanet.sso.SSOException;
-import com.iplanet.sso.SSOToken;
-import com.iplanet.sso.SSOTokenEvent;
-import com.iplanet.sso.SSOTokenID;
-import com.iplanet.sso.SSOTokenListener;
-import com.sun.identity.shared.encode.Base64;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
+
+import com.iplanet.dpro.session.SessionException;
+import com.iplanet.dpro.session.SessionID;
+import com.iplanet.dpro.session.service.SessionService;
+import com.iplanet.dpro.session.watchers.listeners.SessionDeletionListener;
+import com.iplanet.sso.SSOToken;
+import com.sun.identity.console.base.model.AMConsoleException;
+import com.sun.identity.console.base.model.AMModelBase;
+import com.sun.identity.shared.encode.Base64;
+import org.forgerock.guava.common.cache.CacheBuilder;
+import org.forgerock.guava.common.cache.CacheLoader;
+import org.forgerock.guava.common.cache.LoadingCache;
+import org.forgerock.guice.core.InjectorHolder;
+import org.forgerock.openam.cts.continuous.watching.SessionWatchingNotSupported;
 
 /* - NEED NOT LOG - */
 
@@ -49,29 +55,62 @@ import java.util.Random;
  * This class caches policy object for Console.  Token ID and a randomly
  * generated string are used as key to cache and retrieve a policy.
  */
-public class PolicyCache
-    implements SSOTokenListener
-{        
-    private static PolicyCache instance = new PolicyCache();
-    private Map mapTokenIDs = new HashMap(100);
+public class PolicyCache implements SessionDeletionListener {
+
+    /**
+     * Singleton holder for the policy cache.
+     */
+    private enum Holder {
+        INSTANCE;
+
+        private PolicyCache cache;
+
+        Holder() {
+            SessionService sessionService = InjectorHolder.getInstance(SessionService.class);
+            cache = new PolicyCache(sessionService);
+            try {
+                sessionService.registerListener(cache);
+            } catch (SessionWatchingNotSupported ignored) {
+            }
+        }
+
+        /**
+         * Gets the policy cache instance.
+         *
+         * @return The {@code PolicyCache}.
+         */
+        public PolicyCache getCache() {
+            return cache;
+        }
+    }
+
+    private final LoadingCache<String, Map<String, CachedPolicy>> cache = CacheBuilder.newBuilder()
+            .maximumSize(100)
+            .build(new CacheLoader<String, Map<String, CachedPolicy>>() {
+                public Map<String, CachedPolicy> load(String key) {
+                    return new HashMap<>(10);
+                }
+            });
+
+    /**
+     * Gets an instance of policy cache.
+     *
+     * @return An instance of policy cache.
+     */
+    public static PolicyCache getInstance() {
+        return Holder.INSTANCE.getCache();
+    }
 
     /**
      * The generated random string is used to cache policy object when
      * we switch from on tab to another. Since it is used from caching 
      * purposes, usage of secure random is not required.
      */
-    private static Random random = new Random();
+    private final Random random = new Random();
+    private final SessionService sessionService;
 
-    private PolicyCache() {
-    }
-
-    /**
-     * Gets an instance of policy cache
-     *
-     * @return an instance of policy cache
-     */
-    public static PolicyCache getInstance() {
-        return instance;
+    private PolicyCache(SessionService sessionService) {
+        this.sessionService = sessionService;
     }
 
     /**
@@ -82,66 +121,21 @@ public class PolicyCache
      * @return an unique key for retrieve this policy in future
      */
     public String cachePolicy(SSOToken token, CachedPolicy policy) {
-        String randomStr = "";
         if (policy != null) {
-            try {
-                String key = token.getTokenID().toString();
-
-                synchronized (mapTokenIDs) {
-                    Map map = (Map) mapTokenIDs.get(key);
-
-                    if (map == null) {
-                        map = new HashMap(10);
-                        token.addSSOTokenListener(this);
-                    }
-
-                    randomStr = getRandomString();
+            String key = token.getTokenID().toString();
+            synchronized (cache) {
+                Map<String, CachedPolicy> map = cache.getUnchecked(key);
+                try {
+                    sessionService.notifyListenerFor(new SessionID(key), Holder.INSTANCE.getCache());
+                    String randomStr = getRandomString();
                     map.put(randomStr, policy);
-                    mapTokenIDs.put(key, map);
+                    cache.put(key, map);
+                } catch (SessionWatchingNotSupported | SessionException e) {
+                    return "";
                 }
-            } catch (SSOTokenListenersUnsupportedException ex) {
-                // NB. If SSOTokenListenersUnsupportedException is thrown, mapTokenIDs must not
-                // store reference to token ID as this will cause a memory leak.
-                AMModelBase.debug.message("PolicyCache.cachePolicy: could not add sso listener: {}", ex.getMessage());
-                randomStr = "";
-            } catch (SSOException ssoe) {
-                AMModelBase.debug.warning("PolicyCache.cachePolicy", ssoe);
-                randomStr = "";
             }
         }
-
-        return randomStr;
-    }
-
-    /**
-     * Set a policy object with a given ID.
-     *
-     * @param token Single sign on token.
-     * @param cachedID ID of cached policy.
-     * @param policy Policy object to be cached.
-     */
-    public void setPolicy(SSOToken token, String cachedID, CachedPolicy policy){
-        if (policy != null) {
-            try {
-                String key = token.getTokenID().toString();
-
-                synchronized(mapTokenIDs) {
-                    Map map = (Map)mapTokenIDs.get(key);
-
-                    if (map == null) {
-                        map = new HashMap(10);
-                        token.addSSOTokenListener(this);
-                    }
-
-                    map.put(cachedID, policy);
-                    mapTokenIDs.put(key, map);
-                }
-            } catch (SSOException ssoe) {
-                // NB. If SSOTokenListenersUnsupportedException is thrown, mapTokenIDs must not
-                // store reference to token ID as this will cause a memory leak.
-                AMModelBase.debug.warning("PolicyCache.replacePolicy", ssoe);
-            }
-        }
+        return "";
     }
 
     /**
@@ -152,45 +146,29 @@ public class PolicyCache
      * @return policy Policy object.
      * @throws AMConsoleException if policy object cannot be located.
      */
-    public CachedPolicy getPolicy(SSOToken token, String cacheID)
-        throws AMConsoleException
-    {
-        CachedPolicy policy = null;
+    public CachedPolicy getPolicy(SSOToken token, String cacheID) throws AMConsoleException {
         String key = token.getTokenID().toString();
-        Map map = (Map) mapTokenIDs.get(key);
-
-        if (map != null) {
-            policy = (CachedPolicy) map.get(cacheID);
-        }
-
+        Map<String, CachedPolicy> map = cache.getUnchecked(key);
+        CachedPolicy policy = map.get(cacheID);
         if (policy == null) {
-            throw new 
-                AMConsoleException("Cannot locate cached policy " + cacheID);
+            throw new AMConsoleException("Cannot locate cached policy " + cacheID);
         }
-
         return policy;
     }
 
-    /**
-     * Gets notification when single sign on token changes state.
-     *
-     * @param evt single sign on token event
-     */
-    public void ssoTokenChanged(SSOTokenEvent evt) {
-        try {
-            int type = evt.getType();
+    @Override
+    public void sessionDeleted(String sessionId) {
+        clearAllPolicies(sessionId);
+    }
 
-            switch (type) {
-            case SSOTokenEvent.SSO_TOKEN_IDLE_TIMEOUT:
-            case SSOTokenEvent.SSO_TOKEN_MAX_TIMEOUT:
-            case SSOTokenEvent.SSO_TOKEN_DESTROY:
-                SSOToken token = evt.getToken();
-                clearAllPolicies(token.getTokenID());
-                break;
-            }
-        } catch (SSOException ssoe) {
-            AMModelBase.debug.warning("PolicyCache.ssoTokenChanged", ssoe);
-        }
+    @Override
+    public void connectionLost() {
+        clearAllPolicies();
+    }
+
+    @Override
+    public void initiationFailed() {
+        clearAllPolicies();
     }
 
     /**
@@ -198,16 +176,21 @@ public class PolicyCache
      *
      * @param tokenID single sign on token ID
      */
-    protected void clearAllPolicies(SSOTokenID tokenID) {
-        boolean removed = false;
-        String key = tokenID.toString();
-
-        synchronized(mapTokenIDs) {
-            removed = (mapTokenIDs.remove(key) != null);
+    private void clearAllPolicies(String tokenID) {
+        synchronized(cache) {
+            cache.invalidate(tokenID);
         }
+        if (AMModelBase.debug.messageEnabled()) {
+            AMModelBase.debug.warning("PolicyCache.clearAllPolicies," + tokenID);
+        }
+    }
 
-        if (removed && AMModelBase.debug.messageEnabled()) {
-            AMModelBase.debug.warning("PolicyCache.clearAllPolicies," + key);
+    /**
+     * Clears all cached policies for all token Ids in the cache.
+     */
+    private void clearAllPolicies() {
+        for (String sessionId : cache.asMap().keySet()) {
+            clearAllPolicies(sessionId);
         }
     }
 
@@ -216,7 +199,7 @@ public class PolicyCache
      *
      * @return random string
      */
-    private static String getRandomString() {
+    private String getRandomString() {
         StringBuilder sb = new StringBuilder(30);
         byte[] keyRandom = new byte[5];
         random.nextBytes(keyRandom);
