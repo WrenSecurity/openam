@@ -24,7 +24,7 @@
  *
  * $Id: DelegationResourceNameSplitter.java,v 1.2 2009/11/19 00:08:51 veiming Exp $
  *
- * Portions copyright 2013-2015 ForgeRock AS.
+ * Portions copyright 2013-2017 ForgeRock AS.
  */
 
 package com.sun.identity.entitlement.opensso;

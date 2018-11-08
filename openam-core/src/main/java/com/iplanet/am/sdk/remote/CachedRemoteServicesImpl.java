@@ -24,7 +24,7 @@
  *
  * $Id: CachedRemoteServicesImpl.java,v 1.6 2009/11/20 23:52:52 ww203982 Exp $
  *
- * Portions Copyrighted 2011-2015 ForgeRock AS.
+ * Portions Copyrighted 2011-2017 ForgeRock AS.
  */
 
 package com.iplanet.am.sdk.remote;

@@ -34,9 +34,23 @@ import static org.forgerock.openam.entitlement.PolicyConstants.SUPER_ADMIN_SUBJE
 import static org.forgerock.openam.entitlement.utils.EntitlementUtils.getApplicationService;
 import static org.forgerock.openam.entitlement.utils.EntitlementUtils.getEntitlementConfiguration;
 
+import java.security.AccessController;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import javax.security.auth.Subject;
+
+import org.forgerock.openam.entitlement.PolicyConstants;
+import org.forgerock.openam.ldap.LDAPUtils;
+import org.forgerock.util.Reject;
+
 import com.iplanet.sso.SSOException;
 import com.iplanet.sso.SSOToken;
-import com.sun.identity.common.CaseInsensitiveHashMap;
 import com.sun.identity.entitlement.Application;
 import com.sun.identity.entitlement.ApplicationTypeManager;
 import com.sun.identity.entitlement.EntitlementConfiguration;
@@ -46,7 +60,6 @@ import com.sun.identity.entitlement.IPrivilege;
 import com.sun.identity.entitlement.Privilege;
 import com.sun.identity.entitlement.PrivilegeIndexStore;
 import com.sun.identity.entitlement.ReferralPrivilege;
-import com.sun.identity.entitlement.ResourceSaveIndexes;
 import com.sun.identity.entitlement.ResourceSearchIndexes;
 import com.sun.identity.entitlement.SequentialThreadPool;
 import com.sun.identity.entitlement.SubjectAttributesCollector;
@@ -66,30 +79,10 @@ import com.sun.identity.sm.ServiceListener;
 import com.sun.identity.sm.ServiceManager;
 import com.sun.identity.sm.ServiceSchema;
 import com.sun.identity.sm.ServiceSchemaManager;
-import org.forgerock.openam.entitlement.PolicyConstants;
-import org.forgerock.openam.ldap.LDAPUtils;
-import org.forgerock.util.Reject;
-
-import javax.security.auth.Subject;
-import java.security.AccessController;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 public class OpenSSOIndexStore extends PrivilegeIndexStore {
-    private static final int DEFAULT_CACHE_SIZE = 100000;
+
     private static final int DEFAULT_THREAD_SIZE = 1;
-    private static final int DEFAULT_IDX_CACHE_SIZE = 100000;
-    private static final PolicyCache policyCache;
-    private static final PolicyCache referralCache;
-    private static final int policyCacheSize;
-    private static final Map indexCaches;
-    private static final Map referralIndexCaches;
-    private static final int indexCacheSize;
     private static final DataStore dataStore = DataStore.getInstance();
     private static IThreadPool threadPool;
     private static boolean isMultiThreaded;
@@ -100,27 +93,6 @@ public class OpenSSOIndexStore extends PrivilegeIndexStore {
         Subject adminSubject = SubjectUtils.createSuperAdminSubject();
         EntitlementConfiguration ec = getEntitlementConfiguration(adminSubject, "/");
 
-        policyCacheSize = getInteger(ec,
-            EntitlementConfiguration.POLICY_CACHE_SIZE, DEFAULT_CACHE_SIZE);
-        if (policyCacheSize > 0) {
-            policyCache = new PolicyCache("PolicyCache", policyCacheSize);
-            referralCache = new PolicyCache("ReferralPolicyCache",
-                policyCacheSize);
-        } else {
-            policyCache = null;
-            referralCache = null;
-        }
-
-        indexCacheSize = getInteger(ec,
-            EntitlementConfiguration.INDEX_CACHE_SIZE, DEFAULT_IDX_CACHE_SIZE);
-        if (indexCacheSize > 0) {
-            indexCaches = new CaseInsensitiveHashMap();
-            referralIndexCaches = new CaseInsensitiveHashMap();
-        } else {
-            indexCaches = null;
-            referralIndexCaches = null;
-        }
-
         int threadSize = getInteger(ec,
             EntitlementConfiguration.POLICY_SEARCH_THREAD_SIZE,
             DEFAULT_THREAD_SIZE);
@@ -129,7 +101,7 @@ public class OpenSSOIndexStore extends PrivilegeIndexStore {
             threadSize) : new SequentialThreadPool();
         // Register listener for realm deletions
         try {
-            SSOToken adminToken = (SSOToken) AccessController.doPrivileged(
+            SSOToken adminToken = AccessController.doPrivileged(
                 AdminTokenAction.getInstance());
             ServiceConfigManager serviceConfigManager =
                 new ServiceConfigManager(PolicyManager.POLICY_SERVICE_NAME,
@@ -153,8 +125,6 @@ public class OpenSSOIndexStore extends PrivilegeIndexStore {
 
     // Instance variables
     private String realmDN;
-    private IndexCache indexCache;
-    private IndexCache referralIndexCache;
     private EntitlementConfiguration entitlementConfig;
 
     /**
@@ -167,26 +137,6 @@ public class OpenSSOIndexStore extends PrivilegeIndexStore {
         superAdminSubject = SubjectUtils.createSuperAdminSubject();
         realmDN = DNMapper.orgNameToDN(realm);
         entitlementConfig = getEntitlementConfiguration(adminSubject, realm);
-
-        // Get Index caches based on realm
-        if (indexCacheSize > 0) {
-
-            synchronized (indexCaches) {
-                indexCache = (IndexCache)indexCaches.get(realmDN);
-                if (indexCache == null) {
-                    indexCache = new IndexCache(indexCacheSize);
-                    indexCaches.put(realmDN, indexCache);
-                }
-            }
-            synchronized (referralIndexCaches) {
-                referralIndexCache = (IndexCache)referralIndexCaches.get(
-                    realmDN);
-                if (referralIndexCache == null) {
-                    referralIndexCache = new IndexCache(indexCacheSize);
-                    referralIndexCaches.put(realmDN, referralIndexCache);
-                }
-            }
-        }
     }
 
     private static int getNumeric(String str, int defaultValue) {
@@ -273,26 +223,12 @@ public class OpenSSOIndexStore extends PrivilegeIndexStore {
      */
     public void delete(Set<IPrivilege> privileges)
         throws EntitlementException {
-        Subject adminSubject = getAdminSubject();
-        String realm = getRealm();
 
         for (IPrivilege p : privileges) {
-            String dn = null;
             if (p instanceof Privilege) {
-                dn = delete(p.getName(), true);
+                delete(p.getName(), true);
             } else {
-                dn = deleteReferral(p.getName(), true);
-            }
-            if (indexCacheSize > 0) {
-                ResourceSaveIndexes sIndex = p.getResourceSaveIndexes(
-                    adminSubject, DNMapper.orgNameToRealmName(realm));
-                if (sIndex != null) {
-                    if (p instanceof Privilege) {
-                        indexCache.clear(sIndex, dn);
-                    } else {
-                        referralIndexCache.clear(sIndex, dn);
-                    }
-                }
+                deleteReferral(p.getName(), true);
             }
         }
     }
@@ -308,9 +244,6 @@ public class OpenSSOIndexStore extends PrivilegeIndexStore {
         } else {
         }
 
-        if (policyCacheSize > 0) {
-            policyCache.decache(dn, realmDN);
-        }
         return dn;
     }
 
@@ -324,62 +257,7 @@ public class OpenSSOIndexStore extends PrivilegeIndexStore {
         if (notify) {
             dataStore.removeReferral(adminSubject, realm, privilegeName);
         }
-        if (policyCacheSize > 0) {
-            referralCache.decache(dn, realmDN);
-        }
         return dn;
-    }
-
-    private void cache(
-        IPrivilege eval,
-        Set<String> subjectSearchIndexes,
-        String realm
-    ) throws EntitlementException {
-        if (eval instanceof Privilege) {
-            cache((Privilege)eval, subjectSearchIndexes, realm);
-        } else if (eval instanceof ReferralPrivilege) {
-            cache((ReferralPrivilege)eval, realm);
-        }
-    }
-
-    private void cache(Privilege p, Set<String> subjectSearchIndexes, String realm) throws EntitlementException {
-        String dn = DataStore.getPrivilegeDistinguishedName(p.getName(), realm, null);
-        String realmName = DNMapper.orgNameToRealmName(realm);
-        if (subjectSearchIndexes == null) {
-            subjectSearchIndexes = SubjectAttributesManager.getSubjectSearchIndexes(p);
-        }
-        indexCache.cache(p.getEntitlement().getResourceSaveIndexes(superAdminSubject, realmName),
-                subjectSearchIndexes, dn);
-        policyCache.cache(dn, p, realmDN);
-    }
-
-    private void cache(
-        ReferralPrivilege p,
-        String realm
-    ) throws EntitlementException {
-        String dn = DataStore.getPrivilegeDistinguishedName(
-            p.getName(), realm, DataStore.REFERRAL_STORE);
-        referralIndexCache.cache(p.getResourceSaveIndexes(superAdminSubject,
-            DNMapper.orgNameToRealmName(realm)), null, dn);
-        referralCache.cache(dn, p, realmDN);
-    }
-
-    /**
-     * Returns an iterator of matching privilege objects.
-     *
-     * @param realm Realm Name.
-     * @param indexes Resource search indexes.
-     * @param subjectIndexes Subject search indexes.
-     * @param bSubTree <code>true</code> for sub tree evaluation.
-     * @return an iterator of matching privilege objects.
-     * @throws com.sun.identity.entitlement.EntitlementException if results
-     * cannot be obtained.
-     */
-    public Iterator<IPrivilege> search(String realm,
-        ResourceSearchIndexes indexes,
-        Set<String> subjectIndexes, boolean bSubTree)
-        throws EntitlementException {
-        return search(realm, indexes, subjectIndexes, bSubTree, true);
     }
 
     /**
@@ -393,17 +271,14 @@ public class OpenSSOIndexStore extends PrivilegeIndexStore {
      *         Subject indexes.
      * @param bSubTree
      *         Whether in subtree mode.
-     * @param bReferral
-     *         Whether there is a policy referral.
      * @return An iterator of policies.
      * @throws EntitlementException
      *         Should an error occur searching for policies.
      */
     public Iterator<IPrivilege> search(String realm,
-                                       ResourceSearchIndexes indexes,
-                                       Set<String> subjectIndexes,
-                                       boolean bSubTree,
-                                       boolean bReferral
+            ResourceSearchIndexes indexes,
+            Set<String> subjectIndexes,
+            boolean bSubTree
     ) throws EntitlementException {
         BufferedIterator iterator = (isMultiThreaded) ? new BufferedIterator() : new SimpleIterator();
 
@@ -417,29 +292,7 @@ public class OpenSSOIndexStore extends PrivilegeIndexStore {
             return iterator;
         }
 
-        Set setDNs = new HashSet();
-        if (indexCacheSize > 0) {
-            setDNs.addAll(searchPrivileges(indexes, subjectIndexes, bSubTree, iterator));
-            setDNs.addAll(searchReferrals(indexes, bSubTree, iterator));
-        }
-
-        if (bReferral) {
-            String tmp = LDAPUtils.isDN(realm) ? DNMapper.orgNameToRealmName(realm) : realm;
-
-            if (tmp.equals("/")) {
-                ReferralPrivilege ref = getOrgAliasReferral(indexes);
-                if (ref != null) {
-                    iterator.add(ref);
-                }
-            }
-        }
-
-        if (indexCacheSize == 0 || isDSSearchNecessary()) {
-            threadPool.submit(new SearchTask(iterator, indexes, subjectIndexes, bSubTree, setDNs));
-        } else {
-            iterator.isDone();
-        }
-
+        threadPool.submit(new SearchTask(iterator, indexes, subjectIndexes, bSubTree));
         return iterator;
     }
 
@@ -450,179 +303,14 @@ public class OpenSSOIndexStore extends PrivilegeIndexStore {
      * @return The privilege, or empty if none was found.
      */
     public IPrivilege getPrivilege(String privilegeName) {
-
-        //if we have anything in the cache try to retrieve this one from it before going to DS
-        if (policyCacheSize > 0) {
-            String dn = DataStore.getPrivilegeDistinguishedName(privilegeName, getRealm(), null);
-            IPrivilege priv = policyCache.getPolicy(dn);
-            if (priv != null) {
-                return priv;
-            }
-        }
-
-        //only search if we don't know we have everything in the cache
-        if (isPolicyCacheBehind(getRealm())) {
-            try {
-                IPrivilege result = dataStore.getPrivilege(getRealm(), privilegeName);
-                cache(result, null, getRealm());
-                return result;
-            } catch (EntitlementException e) {
-                PolicyConstants.DEBUG.error(
-                        "OpenSSOIndexStore.GetTask.runPolicy", e);
-            }
+        try {
+            return dataStore.getPrivilege(getRealm(), privilegeName);
+        } catch (EntitlementException e) {
+            PolicyConstants.DEBUG.error(
+                    "OpenSSOIndexStore.GetTask.runPolicy", e);
         }
 
         return null;
-    }
-
-    private ReferralPrivilege getOrgAliasReferral(ResourceSearchIndexes indexes
-        ) throws EntitlementException {
-        ReferralPrivilege result = null;
-        SSOToken adminToken = SubjectUtils.getSSOToken(superAdminSubject);
-
-        //TOFIX check if it is webagent service
-        if (OpenSSOIndexStore.isOrgAliasMappingResourceEnabled(adminToken)) {
-            try {
-                Set<String> realms = getReferredRealmNames(
-                    adminToken, indexes);
-                if ((realms != null) && !realms.isEmpty()) {
-                    Map<String, Set<String>> map =
-                        new HashMap<String, Set<String>>();
-                    Set<String> res = new HashSet<String>();
-                    res.add("http*://" +
-                        getReferralURL(indexes.getHostIndexes()) + ":*");
-                    map.put(
-                        ApplicationTypeManager.URL_APPLICATION_TYPE_NAME,
-                        res);
-                    result = new ReferralPrivilege("referralprivilege111",
-                        map, realms);
-                }
-            } catch (SSOException e) {
-                PolicyConstants.DEBUG.error(
-                    "OpenSSOIndexStore.getOrgAliasReferral", e);
-            } catch (SMSException e) {
-                PolicyConstants.DEBUG.error(
-                    "OpenSSOIndexStore.getOrgAliasReferral", e);
-            }
-        }
-        return result;
-    }
-
-    private String getReferralURL(Set<String> indexes) {
-        int len = -1;
-        String result = null;
-        for (String s : indexes) {
-            if (s.length() > len) {
-                result = s;
-                len = s.length();
-            }
-        }
-        return result;
-    }
-
-    private Set<String> getReferredRealmNames(
-        SSOToken adminToken,
-        ResourceSearchIndexes indexes)
-        throws SMSException, SSOException {
-        Set<String> searchIndexes = new HashSet<String>();
-        for (String s : indexes.getHostIndexes()) {
-            if (s.startsWith("://")) {
-                s = s.substring(3);
-            }
-
-            if (s.length() > 0) {
-                searchIndexes.add(s);
-            }
-        }
-        Set<String> searchSet = new HashSet<String>();
-        searchSet.add(getReferralURL(searchIndexes));
-
-        ServiceManager sm = new ServiceManager(adminToken);
-        Set<String> realmNames = sm.searchOrganizationNames(
-            PolicyManager.ID_REPO_SERVICE, PolicyManager.ORG_ALIAS,
-            searchSet);
-        if ((realmNames != null) && !realmNames.isEmpty()) {
-            Set<String> realms = new HashSet<String>();
-            for (String r : realmNames) {
-                if (!r.equals("/")) {
-                    if (!r.startsWith("/")) {
-                        r = "/" + r;
-                    }
-                    realms.add(r);
-                }
-            }
-            return realms;
-        } else {
-            return Collections.EMPTY_SET;
-        }
-    }
-
-    private boolean isPolicyCacheBehind(String realm) {
-        if (!CacheTaboo.isEmpty()) {
-            return true;
-        }
-
-        int cacheEntries = policyCache.getCount(realm);
-        int totalPolicies = DataStore.getNumberOfPolicies(realm);
-        if ((totalPolicies > 0) &&(cacheEntries < totalPolicies)) {
-            return true;
-        }
-
-        return false;
-    }
-
-    private boolean isReferralCacheBehind(String realm) {
-        if (!CacheTaboo.isEmpty()) {
-            return true;
-        }
-
-        int cacheEntries = referralCache.getCount(realm);
-        int totalReferrals = DataStore.getNumberOfReferrals(realm);
-        if ((totalReferrals > 0) && (cacheEntries < totalReferrals)) {
-            return true;
-        }
-
-        return false;
-    }
-
-    private boolean isDSSearchNecessary() {
-        String realm = getRealm();
-
-        return isPolicyCacheBehind(realm) || isReferralCacheBehind(realm);
-    }
-
-    private Set<String> searchReferrals(ResourceSearchIndexes indexes,
-        boolean bSubTree, BufferedIterator iterator)
-    {
-        Set<String> setDNs = referralIndexCache.getMatchingEntries(indexes,
-                null, bSubTree);
-        for (Iterator<String> i = setDNs.iterator(); i.hasNext();) {
-            String dn = (String) i.next();
-            ReferralPrivilege r = referralCache.getReferral(dn);
-            if (r != null) {
-                iterator.add(r);
-            } else {
-                i.remove();
-            }
-        }
-        return setDNs;
-    }
-
-    private Set<String> searchPrivileges(ResourceSearchIndexes indexes,
-        Set<String> subjectIndexes, boolean bSubTree, BufferedIterator iterator)
-    {
-        Set<String> setDNs = indexCache.getMatchingEntries(indexes,
-            subjectIndexes, bSubTree);
-        for (Iterator<String> i = setDNs.iterator(); i.hasNext();) {
-            String dn = (String) i.next();
-            Privilege p = policyCache.getPolicy(dn);
-            if (p != null) {
-                iterator.add(p);
-            } else {
-                i.remove();
-            }
-        }
-        return setDNs;
     }
 
     /**
@@ -924,20 +612,6 @@ public class OpenSSOIndexStore extends PrivilegeIndexStore {
         return (realmDN);
     }
 
-    // Monitoring
-    public static int getNumCachedPolicies(String realm) {
-        return policyCache.getCount(realm);
-    }
-    public static int getNumCachedReferrals(String realm) {
-        return referralCache.getCount(realm);
-    }
-    public static int getNumCachedPolicies() {
-        return policyCache.getCount();
-    }
-    public static int getNumCachedReferrals() {
-        return referralCache.getCount();
-    }
-
     @Override
     public boolean hasPrivilgesWithApplication(
         String realm, String applName) throws EntitlementException {
@@ -950,32 +624,23 @@ public class OpenSSOIndexStore extends PrivilegeIndexStore {
         private ResourceSearchIndexes indexes;
         private Set<String> subjectIndexes;
         private boolean bSubTree;
-        private Set<String> excludeDNs;
 
         public SearchTask(
             BufferedIterator iterator,
             ResourceSearchIndexes indexes,
             Set<String> subjectIndexes,
-            boolean bSubTree,
-            Set<String> excludeDNs
+            boolean bSubTree
         ) {
             this.iterator = iterator;
             this.indexes = indexes;
             this.subjectIndexes = subjectIndexes;
             this.bSubTree = bSubTree;
-            this.excludeDNs = excludeDNs;
         }
 
         public void run() {
             try {
-                Set<IPrivilege> results = dataStore.search(
-                    getAdminSubject(), getRealmDN(), iterator,
-                    indexes, subjectIndexes, bSubTree, excludeDNs);
-                if (indexCacheSize > 0) {
-                    for (IPrivilege eval : results) {
-                        cache(eval, subjectIndexes, getRealmDN());
-                    }
-                }
+                dataStore.search(getRealmDN(), iterator,
+                    indexes, subjectIndexes, bSubTree);
             } catch (EntitlementException ex) {
                 iterator.isDone();
                 PolicyConstants.DEBUG.error(
@@ -985,7 +650,7 @@ public class OpenSSOIndexStore extends PrivilegeIndexStore {
     }
 
     // SMS Listener to clear cache when realms are deleted
-    static class EntitlementsListener implements ServiceListener {
+    private static class EntitlementsListener implements ServiceListener {
 
         public void schemaChanged(String serviceName, String version) {
         }
@@ -1001,9 +666,7 @@ public class OpenSSOIndexStore extends PrivilegeIndexStore {
                 ((serviceComponent == null) ||
                 (serviceComponent.trim().length() == 0) ||
                 serviceComponent.equals("/"))) {
-                // Realm has been deleted, clear the indexCaches &
-                indexCaches.remove(orgName);
-                referralIndexCaches.remove(orgName);
+                // Realm has been deleted
                 getApplicationService(SUPER_ADMIN_SUBJECT, orgName).clearCache();
             }
         }

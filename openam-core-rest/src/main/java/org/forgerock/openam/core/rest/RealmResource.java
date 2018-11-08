@@ -121,7 +121,10 @@ public class RealmResource implements CollectionResourceProvider {
         String realm = null;
 
         try {
-            hasPermission(context);
+            if (!isAdmin(context)) {
+                debug.error("Unauthorized user.");
+                throw new ForbiddenException("Access Denied");
+            }
             final JsonValue jVal = request.getContent();
             // get the realm
             realm = jVal.get("realm").asString();
@@ -270,7 +273,10 @@ public class RealmResource implements CollectionResourceProvider {
         String holdResourceId = checkForTopLevelRealm(resourceId);
 
         try {
-            hasPermission(context);
+            if (!isAdmin(context)) {
+                debug.error("Unauthorized user.");
+                throw new ForbiddenException("Access Denied");
+            }
 
             if (holdResourceId != null && !holdResourceId.startsWith("/")) {
                 holdResourceId = "/" + holdResourceId;
@@ -315,10 +321,6 @@ public class RealmResource implements CollectionResourceProvider {
             } catch (Exception e) {
                 return new BadRequestException(e.getMessage(), e).asPromise();
             }
-        } catch (SSOException sso){
-            debug.error("RealmResource.updateInstance() : Cannot DELETE "
-                    + resourceId + ":" + sso);
-            return new PermanentException(401, "Access Denied", null).asPromise();
         } catch (ForbiddenException fe){
             debug.error("RealmResource.updateInstance() : Cannot DELETE "
                     + resourceId + ":" + fe);
@@ -410,7 +412,10 @@ public class RealmResource implements CollectionResourceProvider {
         String holdResourceId = checkForTopLevelRealm(resourceId);
 
         try {
-            hasPermission(context);
+            if (!isAdmin(context)) {
+                debug.error("Unauthorized user.");
+                throw new ForbiddenException("Access Denied");
+            }
             if (holdResourceId != null && !holdResourceId.startsWith("/")) {
                 holdResourceId = "/" + holdResourceId;
             }
@@ -431,10 +436,6 @@ public class RealmResource implements CollectionResourceProvider {
             }
             return newResultPromise(resource);
 
-        } catch (SSOException sso){
-            debug.error("RealmResource.updateInstance() : Cannot READ "
-                    + resourceId, sso);
-            return new PermanentException(401, "Access Denied", null).asPromise();
         } catch (ForbiddenException fe){
             debug.error("RealmResource.readInstance() : Cannot READ "
                     + resourceId + ":" + fe);
@@ -699,7 +700,10 @@ public class RealmResource implements CollectionResourceProvider {
 
         try {
 
-            hasPermission(context);
+            if (!isAdmin(context)) {
+                debug.error("Unauthorized user.");
+                throw new ForbiddenException("Access Denied");
+            }
             realm = checkForTopLevelRealm(resourceId);
             if (realm != null && !realm.startsWith("/")) {
                 realm = "/" + realm;

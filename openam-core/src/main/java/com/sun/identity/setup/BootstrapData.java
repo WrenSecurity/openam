@@ -24,7 +24,7 @@
  *
  * $Id: BootstrapData.java,v 1.16 2009/05/05 21:24:47 veiming Exp $
  *
- * Portions Copyrighted 2010-2016 ForgeRock AS.
+ * Portions Copyrighted 2010-2017 ForgeRock AS.
  */
 
 package com.sun.identity.setup;
@@ -280,8 +280,6 @@ public class BootstrapData {
                     throw new IllegalStateException("An error occurred while upgrading directory content", ue);
                 }
             }
-        } else {
-            EmbeddedOpenDS.initializeForClientUse();
         }
     }
 
@@ -312,10 +310,11 @@ public class BootstrapData {
         File odsDirFile = new File(odsDir);
 
         if (odsDirFile.exists()) {
+            EmbeddedOpenDS.initialize(odsDir);
             if (!EmbeddedOpenDS.isStarted()) {
                 try {
                     SetupProgress.reportStart("emb.startemb", null);
-                    EmbeddedOpenDS.startServer(odsDir);
+                    EmbeddedOpenDS.startServer();
                     SetupProgress.reportEnd("emb.success", null);
                 } catch (Exception ex) {
                     //ignore, it maybe started.

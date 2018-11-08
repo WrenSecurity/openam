@@ -24,7 +24,7 @@
  *
  * $Id: CachedSMSEntry.java,v 1.16 2009/10/08 20:33:54 hengming Exp $
  *
- * Portions Copyrighted 2015-2016 ForgeRock AS.
+ * Portions Copyrighted 2015-2017 ForgeRock AS.
  */
 
 package com.sun.identity.sm;

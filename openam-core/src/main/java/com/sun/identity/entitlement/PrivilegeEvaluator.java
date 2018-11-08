@@ -24,7 +24,7 @@
  *
  * $Id: PrivilegeEvaluator.java,v 1.2 2009/10/07 06:36:40 veiming Exp $
  *
- * Portions Copyrighted 2010-2016 ForgeRock AS.
+ * Portions Copyrighted 2010-2017 ForgeRock AS.
  */
 package com.sun.identity.entitlement;
 

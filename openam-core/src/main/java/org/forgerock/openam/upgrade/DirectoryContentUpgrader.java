@@ -27,6 +27,10 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import com.google.inject.Key;
+import com.sun.identity.setup.AMSetupServlet;
+import com.sun.identity.setup.EmbeddedOpenDS;
+import com.sun.identity.shared.debug.Debug;
 import org.forgerock.guice.core.InjectorHolder;
 import org.forgerock.openam.cts.api.CoreTokenConstants;
 import org.forgerock.openam.cts.impl.CTSDataLayerConfiguration;
@@ -35,11 +39,11 @@ import org.forgerock.openam.sm.datalayer.api.ConnectionType;
 import org.forgerock.openam.sm.datalayer.api.DataLayer;
 import org.forgerock.openam.sm.datalayer.api.DataLayerException;
 import org.forgerock.openam.sm.datalayer.api.StoreMode;
+import org.forgerock.openam.sm.datalayer.impl.LabelsDataLayerConfiguration;
 import org.forgerock.openam.sm.datalayer.impl.ResourceSetDataLayerConfiguration;
 import org.forgerock.openam.sm.datalayer.impl.UmaAuditDataLayerConfiguration;
 import org.forgerock.openam.sm.datalayer.impl.UmaPendingRequestDataLayerConfiguration;
 import org.forgerock.openam.sm.datalayer.impl.ldap.LdapDataLayerConfiguration;
-import org.forgerock.openam.sm.datalayer.impl.LabelsDataLayerConfiguration;
 import org.forgerock.openam.tokens.CoreTokenField;
 import org.forgerock.openam.utils.IOUtils;
 import org.forgerock.openam.utils.StringUtils;
@@ -58,11 +62,7 @@ import org.forgerock.opendj.ldif.ChangeRecordWriter;
 import org.forgerock.opendj.ldif.ConnectionChangeRecordWriter;
 import org.forgerock.opendj.ldif.ConnectionEntryReader;
 import org.forgerock.opendj.ldif.LDIFChangeRecordReader;
-
-import com.google.inject.Key;
-import com.sun.identity.setup.AMSetupServlet;
-import com.sun.identity.setup.EmbeddedOpenDS;
-import com.sun.identity.shared.debug.Debug;
+import org.forgerock.opendj.server.embedded.EmbeddedDirectoryServerException;
 
 /**
  * This class is aiming to upgrade the content of the configuration store. The possible changes may involve directory
@@ -146,9 +146,7 @@ public class DirectoryContentUpgrader {
             upgraders.add(new LiftUserPasswordRestriction());
             upgraders.add(new RemoveBlanketDenyAll());
         }
-        Connection conn = null;
-        try {
-            conn = connFactory.create();
+        try (Connection conn = connFactory.create()) {
             Schema schema = null;
             try {
                 schema = Schema.readSchemaForEntry(conn, DN.valueOf(baseDN)).asStrictSchema();
@@ -161,11 +159,9 @@ public class DirectoryContentUpgrader {
                     it.remove();
                 }
             }
-        } catch (DataLayerException ere) {
-            DEBUG.error("An error occurred while trying to get a connection", ere);
-            throw new UpgradeException(ere);
-        } finally {
-            IOUtils.closeIfNotNull(conn);
+        } catch (DataLayerException e) {
+            DEBUG.error("An error occurred while trying to get a connection", e);
+            throw new UpgradeException(e);
         }
     }
 
@@ -289,16 +285,16 @@ public class DirectoryContentUpgrader {
             for (Upgrader upgrader : upgraders) {
                 processLDIF(conn, upgrader.getLDIFPath());
             }
-        } catch (DataLayerException ere) {
-            DEBUG.error("An error occurred while trying to get a connection", ere);
-            throw new UpgradeException(ere);
+        } catch (DataLayerException e) {
+            DEBUG.error("An error occurred while trying to get a connection", e);
+            throw new UpgradeException(e);
         }
         if (isEmbedded && rebuildIndexes) {
             if (DEBUG.messageEnabled()) {
                 DEBUG.message("Rebuilding indexes in embedded directory");
             }
             try {
-                EmbeddedOpenDS.rebuildIndex(baseDir, baseDN);
+                EmbeddedOpenDS.rebuildIndex(baseDN);
             } catch (Exception ex) {
                 throw new UpgradeException(ex);
             }

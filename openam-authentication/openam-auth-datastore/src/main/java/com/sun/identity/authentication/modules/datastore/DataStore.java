@@ -24,12 +24,11 @@
  *
  * $Id: DataStore.java,v 1.4 2008/06/25 05:41:56 qcheng Exp $
  *
- */
-
-/**
- * Portions Copyrighted [2011] [ForgeRock AS]
+ * Portions Copyrighted 2011-2016 ForgeRock AS.
  */
 package com.sun.identity.authentication.modules.datastore;
+
+import static com.sun.identity.authentication.service.AMAuthErrorCode.USERID_NOT_FOUND;
 
 import com.sun.identity.authentication.spi.UserNamePasswordValidationException;
 import com.sun.identity.shared.debug.Debug;
@@ -39,14 +38,20 @@ import com.sun.identity.authentication.spi.AuthLoginException;
 import com.sun.identity.authentication.spi.InvalidPasswordException;
 import com.sun.identity.authentication.util.ISAuthConstants;
 import com.sun.identity.idm.AMIdentityRepository;
+import com.sun.identity.idm.IdRepoErrorCode;
 import com.sun.identity.idm.IdRepoException;
 import com.sun.identity.sm.ServiceConfig;
+
 import java.util.Map;
 import java.util.ResourceBundle;
+
 import javax.security.auth.Subject;
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.NameCallback;
 import javax.security.auth.callback.PasswordCallback;
+
+import org.forgerock.openam.utils.StringUtils;
+
 import java.security.Principal;
 
 public class DataStore extends AMLoginModule {
@@ -162,8 +167,11 @@ public class DataStore extends AMLoginModule {
         } catch (IdRepoException ex) {
             debug.message("idRepo Exception");
             setFailureID(userName);
-            throw new AuthLoginException(amAuthDataStore, "authFailed",
-                null, ex);
+            if (StringUtils.compareCaseInsensitiveString(ex.getErrorCode(), IdRepoErrorCode.TYPE_NOT_FOUND)) {
+                throw new AuthLoginException("amAuth", USERID_NOT_FOUND, null);
+            } else {
+                throw new AuthLoginException(amAuthDataStore, "authFailed", null, ex);
+            }
         }
         return retVal;
         

@@ -1,7 +1,7 @@
 /*
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
  *
- * Copyright 2011-2016 ForgeRock AS.
+ * Copyright 2011-2017 ForgeRock AS.
  *
  * The contents of this file are subject to the terms
  * of the Common Development and Distribution License
@@ -29,7 +29,6 @@ import static java.nio.file.Files.copy;
 import javax.annotation.Nonnull;
 import javax.servlet.ServletContext;
 import java.io.BufferedWriter;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -38,7 +37,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Arrays;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
@@ -46,25 +44,17 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 import com.sun.identity.setup.AMSetupUtils;
+import com.sun.identity.setup.EmbeddedOpenDS;
 import com.sun.identity.setup.SetupConstants;
 import com.sun.identity.shared.debug.Debug;
-import org.forgerock.openam.ldap.LDAPRequests;
 import org.forgerock.openam.utils.IOUtils;
 import org.forgerock.openam.utils.StringUtils;
-import org.forgerock.opendj.ldap.Attribute;
-import org.forgerock.opendj.ldap.ByteString;
-import org.forgerock.opendj.ldap.DN;
-import org.forgerock.opendj.ldap.Entry;
-import org.forgerock.opendj.ldap.SearchScope;
-import org.forgerock.opendj.ldap.requests.SearchRequest;
-import org.forgerock.opendj.ldif.EntryReader;
-import org.forgerock.opendj.ldif.LDIF;
-import org.forgerock.opendj.ldif.LDIFEntryReader;
-import org.forgerock.opendj.ldif.LDIFEntryWriter;
+import org.forgerock.opendj.ldap.Dn;
+import org.forgerock.opendj.ldif.Ldif;
+import org.forgerock.opendj.ldif.LdifEntryReader;
+import org.forgerock.opendj.ldif.LdifEntryWriter;
 import org.forgerock.util.annotations.VisibleForTesting;
 import org.opends.server.core.LockFileManager;
-import org.opends.server.tools.RebuildIndex;
-import org.opends.server.util.TimeThread;
 
 /**
  * Upgrade tool for upgrading the embedded instance of OpenDS to OpenDJ.
@@ -250,8 +240,8 @@ public class OpenDJUpgrader {
         restoreFile("config/java.properties");
 
         // Rebuild all indexes for all local DB backends.
-        final List<DN> baseDNs = findBaseDNs();
-        for (final DN baseDN : baseDNs) {
+        final List<Dn> baseDNs = EmbeddedOpenDS.findBackendsBaseDNs();
+        for (final Dn baseDN : baseDNs) {
             rebuildAllIndexes(baseDN);
         }
 
@@ -321,13 +311,13 @@ public class OpenDJUpgrader {
         }
     }
 
-    private List<DN> findBaseDNs() throws IOException {
-        final List<DN> baseDNs = new LinkedList<DN>();
+    private List<Dn> findBaseDNs() throws IOException {
+        final List<Dn> baseDNs = new LinkedList<Dn>();
         final SearchRequest request = LDAPRequests.newSearchRequest("cn=backends,cn=config", SearchScope.WHOLE_SUBTREE,
                 "(objectclass=ds-cfg-backend)", "ds-cfg-base-dn");
 
-        try (LDIFEntryReader reader = new LDIFEntryReader(new FileInputStream(installRoot + "/config/config.ldif"))) {
-            final EntryReader filteredReader = LDIF.search(reader, request);
+        try (LdifEntryReader reader = new LdifEntryReader(new FileInputStream(installRoot + "/config/config.ldif"))) {
+            final EntryReader filteredReader = Ldif.search(reader, request);
 
             while (filteredReader.hasNext()) {
                 final Entry entry = filteredReader.readEntry();
@@ -335,7 +325,7 @@ public class OpenDJUpgrader {
 
                 if (values != null) {
                     for (final ByteString value : values) {
-                        baseDNs.add(DN.valueOf(value.toString()));
+                        baseDNs.add(Dn.valueOf(value.toString()));
                     }
                 }
             }
@@ -400,14 +390,14 @@ public class OpenDJUpgrader {
             InputStream currentConfig = new FileInputStream(getBackupFileName("config/config.ldif"));
             OutputStream newCurrentConfig = new FileOutputStream(installRoot + "/config/config.ldif")) {
 
-            final LDIFEntryReader defaultCurrentConfigReader = new LDIFEntryReader(defaultCurrentConfig);
-            final LDIFEntryReader defaultNewConfigReader = new LDIFEntryReader(defaultNewConfig);
-            final LDIFEntryReader currentConfigReader = new LDIFEntryReader(currentConfig);
-            final LDIFEntryWriter newConfigWriter = new LDIFEntryWriter(newCurrentConfig);
+            final LdifEntryReader defaultCurrentConfigReader = new LdifEntryReader(defaultCurrentConfig);
+            final LdifEntryReader defaultNewConfigReader = new LdifEntryReader(defaultNewConfig);
+            final LdifEntryReader currentConfigReader = new LdifEntryReader(currentConfig);
+            final LdifEntryWriter newConfigWriter = new LdifEntryWriter(newCurrentConfig);
 
-            LDIF.copyTo(
-                    LDIF.patch(currentConfigReader,
-                            LDIF.diff(defaultCurrentConfigReader, defaultNewConfigReader)),
+            Ldif.copyTo(
+                    Ldif.patch(currentConfigReader,
+                            Ldif.diff(defaultCurrentConfigReader, defaultNewConfigReader)),
                     newConfigWriter);
             newConfigWriter.flush();
             message("done");
@@ -481,38 +471,15 @@ public class OpenDJUpgrader {
         }
     }
 
-    private void rebuildAllIndexes(final DN baseDN) throws Exception {
-        // @formatter:off
-        final String[] args = {
-                "--configClass", "org.opends.server.extensions.ConfigFileHandler",
-                "--configFile", installRoot + "/config/config.ldif",
-                "--rebuildAll",
-                "--baseDN", baseDN.toString(),
-                "--noPropertiesFile"
-        };
-        // @formatter:on
-
-        message("Rebuilding indexes for suffix \"" + baseDN.toString() + "\"...");
-        final OutputStream stdout = new ByteArrayOutputStream();
-        final OutputStream stderr = new ByteArrayOutputStream();
-
+    private void rebuildAllIndexes(final Dn baseDN) throws EmbeddedDirectoryServerException {
+        String base = baseDN.toString();
+        message("Rebuilding indexes for suffix \"" + base + "\"...");
         try {
-            TimeThread.start();
-            System.setProperty("org.opends.server.ServerRoot", installRoot);
-            final int rc = RebuildIndex.mainRebuildIndex(args, true, stdout, stderr);
-
-            if (rc == 0) {
-                message(stdout.toString());
-                message("done");
-            } else {
-                throw new IOException("failed with return code " + rc);
-            }
-        } catch (final Exception ex) {
-            error(stderr.toString());
+            EmbeddedOpenDS.rebuildIndex(base);
+            message("rebuilding indexes done");
+        } catch (EmbeddedDirectoryServerException ex) {
             error("Rebuilding indexes", ex);
             throw ex;
-        } finally {
-            TimeThread.stop();
         }
     }
 

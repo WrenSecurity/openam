@@ -24,7 +24,7 @@
  *
  * $Id: ResourceManager.java,v 1.7 2009/06/30 17:46:02 veiming Exp $
  *
- * Portions Copyrighted 2011-2015 ForgeRock AS.
+ * Portions Copyrighted 2011-2017 ForgeRock AS.
  */
 
 package com.sun.identity.policy;

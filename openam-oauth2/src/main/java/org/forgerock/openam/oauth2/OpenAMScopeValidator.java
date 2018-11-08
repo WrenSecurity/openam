@@ -22,6 +22,7 @@ import static org.forgerock.openam.oauth2.OAuth2Constants.Params.OPENID;
 import static org.forgerock.openam.oauth2.OAuth2Constants.TokenEndpoint.CLIENT_CREDENTIALS;
 import static org.forgerock.openam.scripting.ScriptConstants.EMPTY_SCRIPT_SELECTION;
 import static org.forgerock.openam.scripting.ScriptConstants.OIDC_CLAIMS_NAME;
+import static org.forgerock.openam.utils.HashUtil.generateBase64Hash;
 
 import java.security.AccessController;
 import java.text.DateFormat;
@@ -270,8 +271,10 @@ public class OpenAMScopeValidator implements ScopeValidator {
                                                                  String realm,
                                                                  SSOToken ssoToken) {
         String restrictedTokenId = getRestrictedTokenId(clientRegistration, realm, ssoToken);
+        String sessionUid = generateBase64Hash(ssoToken.getTokenID().toString());
         final Map<String, Object> values = userInfoClaims.getValues();
         values.put(OAuth2Constants.JWTTokenParams.SSOTOKEN, restrictedTokenId);
+        values.put(OAuth2Constants.JWTTokenParams.SESSIONUID, sessionUid);
         return new UserInfoClaims(values, userInfoClaims.getCompositeScopes());
     }
 

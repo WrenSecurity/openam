@@ -17,13 +17,13 @@ package org.forgerock.openam.slf4j;
 
 import static org.opends.messages.ExternalMessages.INFO_EXTERNAL_LIB_MESSAGE;
 
+import com.forgerock.opendj.cli.LoggingCategoryNames;
 import org.forgerock.i18n.LocalizableMessage;
 import org.forgerock.i18n.slf4j.LocalizedMarker;
 import org.opends.messages.Severity;
 import org.opends.server.loggers.DebugLogger;
 import org.opends.server.loggers.DebugTracer;
 import org.opends.server.loggers.ErrorLogger;
-import org.opends.server.loggers.LoggingCategoryNames;
 import org.slf4j.Logger;
 import org.slf4j.Marker;
 import org.slf4j.helpers.MessageFormatter;

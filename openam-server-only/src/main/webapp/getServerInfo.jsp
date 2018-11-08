@@ -24,7 +24,7 @@
 
    $Id: getServerInfo.jsp,v 1.6 2008/09/04 00:34:01 rajeevangal Exp $
 
-   Portions Copyrighted 2010-2015 ForgeRock AS.
+   Portions Copyrighted 2010-2017 ForgeRock AS.
 --%>
 
 <%@ page
@@ -126,16 +126,14 @@ import="com.iplanet.am.util.SystemProperties,
     String adminPort = null;
 
     if (isEmbeddedDS) {
-        replPort = EmbeddedOpenDS.getReplicationPort(dsmgr, JCECrypt.decode(dspwd),
-            "localhost", dsport);
+        replPort = EmbeddedOpenDS.getReplicationPort()
         replPortAvailable = "true";
         if (replPort == null) {
             replPortAvailable = "false";
             replPort = ""+ AMSetupUtils.getFirstUnusedPort("localhost", 50889, 1000);
         }
 
-        adminPort = EmbeddedOpenDS.getAdminPort(dsmgr, JCECrypt.decode(dspwd),
-                "localhost", dsport);
+        adminPort = EmbeddedOpenDS.getAdminPort();
 
         if (adminPort == null) {
             adminPort = "4444";

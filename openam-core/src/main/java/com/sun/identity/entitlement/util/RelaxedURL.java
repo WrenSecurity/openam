@@ -24,105 +24,121 @@
  *
  * $Id: RelaxedURL.java,v 1.2 2009/10/20 18:46:16 veiming Exp $
  *
- * Portions Copyrighted 2013-2015 ForgeRock AS.
+ * Portions Copyrighted 2013-2017 ForgeRock AS.
  */
 package com.sun.identity.entitlement.util;
 
 import java.net.MalformedURLException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-public class RelaxedURL {
+/**
+ * Relaxed URL can parse out standard URLs but also URL patterns that may include wildcards.
+ * <p>
+ * Example standard URL: {@code http://abc.def.com:8080/xyz?a=b&1=2}
+ * Example wildcard URL: {@code *://*:80/*?*}
+ */
+public final class RelaxedURL {
+
+    private static final Pattern SIMPLE_URL_PATTERN =
+            Pattern.compile("^(?<protocol>.*)://(?<host>[^/:]*)(:(?<port>[^/?]*))?" +
+                    "(?<path>/[^?]*)?(\\?(?<querystring>.*))?$");
 
     private static final String PROTOCOL_HTTPS = "https";
     private static final String PROTOCOL_HTTP = "http";
 
-    private String protocol;
-    private String hostname;
-    private String port;
-    private String path;
-    private String query;
+    private final String protocol;
+    private final String hostname;
+    private final String port;
+    private final String path;
+    private final String query;
 
-    public RelaxedURL(String url)
-        throws MalformedURLException {
-        int idx = getProtocol(url);
-        parseURL(url, idx);
-    }
+    /**
+     * Constructs a new relaxed URL from the given URL string.
+     *
+     * @param url URL string
+     * @throws MalformedURLException should the passed URL string be malformed
+     */
+    public RelaxedURL(String url) throws MalformedURLException {
+        Matcher matcher = SIMPLE_URL_PATTERN.matcher(url);
 
-    private int getProtocol(String url) throws MalformedURLException {
-        int idx = url.indexOf("://");
-        if (idx == -1) {
+        if (!matcher.find()) {
             throw new MalformedURLException(url);
         }
 
-        protocol = url.substring(0, idx);
-        return idx+3;
+        protocol = getGroupValueWithDefault("protocol", matcher);
+        hostname = getGroupValueWithDefault("host", matcher);
+        port = determinePort(getGroupValueWithDefault("port", matcher), protocol);
+        path = getGroupValueWithDefault("path", matcher, "/");
+        query = getGroupValueWithDefault("querystring", matcher);
     }
 
-    private void parseURL(String url, int begins) {
-        if (protocol.equalsIgnoreCase(PROTOCOL_HTTP) || protocol.equalsIgnoreCase(PROTOCOL_HTTPS)) {
-            int colon = url.indexOf(":", begins);
-            if (colon == -1) {
-                if (protocol.equalsIgnoreCase(PROTOCOL_HTTP)) {
-                    port = "80";
-                } else if (protocol.equalsIgnoreCase(PROTOCOL_HTTPS)) {
-                    port = "443";
-                }
-
-                int slash = url.indexOf('/', begins);
-                if (slash == -1) {
-                    hostname = url.substring(begins);
-                    path = "/";
-                } else {
-                    hostname = url.substring(begins, slash);
-                    path = url.substring(slash);
-                }
-            } else {
-                hostname = url.substring(begins, colon);
-
-                int slash = url.indexOf('/', colon);
-                if (slash == -1) {
-                    port = url.substring(colon + 1);
-                    path = "/";
-                } else {
-                    port = url.substring(colon + 1, slash);
-                    path = url.substring(slash);
-                }
-            }
-        } else {
-            int slash = url.indexOf('/', begins);
-            if (slash == -1) {
-                hostname = url.substring(begins);
-                path = "/";
-            } else {
-                hostname = url.substring(begins, slash);
-                path = url.substring(slash);
-            }
+    private String determinePort(String parsedPort, String protocol) {
+        if (!parsedPort.isEmpty()) {
+            return parsedPort;
         }
-        
-        int idx = path.indexOf('?');
-        if (idx == -1) {
-            query = "";
-        } else {
-            query = path.substring(idx +1);
-            path = path.substring(0, idx);
+
+        if (PROTOCOL_HTTP.equalsIgnoreCase(protocol)) {
+            return "80";
         }
+
+        if (PROTOCOL_HTTPS.equalsIgnoreCase(protocol)) {
+            return "443";
+        }
+
+        return parsedPort;
     }
 
-    public String getHostname() {
-        return hostname;
+    private String getGroupValueWithDefault(String groupName, Matcher matcher) {
+        return getGroupValueWithDefault(groupName, matcher, "");
     }
 
-    public String getPath() {
-        return path;
+    private String getGroupValueWithDefault(String groupName, Matcher matcher, String defaultValue) {
+        String groupValue = matcher.group(groupName);
+        return groupValue == null ? defaultValue : groupValue;
     }
 
-    public String getPort() {
-        return port;
-    }
-
+    /**
+     * Returns the parsed protocol.
+     *
+     * @return the parsed protocol or empty string if not present
+     */
     public String getProtocol() {
         return protocol;
     }
 
+    /**
+     * Returns the parsed hostname.
+     *
+     * @return the parsed hostname or empty string if not present
+     */
+    public String getHostname() {
+        return hostname;
+    }
+
+    /**
+     * Returns the parsed port.
+     *
+     * @return the parsed port or empty string if not present
+     */
+    public String getPort() {
+        return port;
+    }
+
+    /**
+     * Returns the parsed path.
+     *
+     * @return the parsed path or "/" if not present
+     */
+    public String getPath() {
+        return path;
+    }
+
+    /**
+     * Returns the parsed query string.
+     *
+     * @return the parsed query string or empty string if not present
+     */
     public String getQuery() {
         return query;
     }
@@ -133,8 +149,12 @@ public class RelaxedURL {
         builder.append(protocol);
         builder.append("://");
         builder.append(hostname);
-        builder.append(':');
-        builder.append(port);
+
+        if (!port.isEmpty()) {
+            builder.append(':');
+            builder.append(port);
+        }
+
         builder.append(path);
 
         if (!query.isEmpty()) {

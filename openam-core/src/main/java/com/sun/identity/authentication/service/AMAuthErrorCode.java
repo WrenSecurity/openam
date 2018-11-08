@@ -170,5 +170,10 @@ public class AMAuthErrorCode {
      *  Module not found
      */
     public static final String AUTH_MODULE_NOT_FOUND = "126";
-    
+
+    /**
+     *  User ID not found
+     *  NOTE: This is different from errorCode 113.
+     */
+    public static final String USERID_NOT_FOUND = "NoUser";
 }

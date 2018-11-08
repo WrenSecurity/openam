@@ -24,7 +24,7 @@
  *
  * $Id: SetupProgress.java,v 1.10 2008/08/31 06:56:18 hengming Exp $
  *
- * Portions Copyrighted 2011-2016 ForgeRock AS.
+ * Portions Copyrighted 2011-2017 ForgeRock AS.
  */
 
 package com.sun.identity.setup;

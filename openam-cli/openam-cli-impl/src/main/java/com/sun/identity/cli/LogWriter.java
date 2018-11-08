@@ -44,6 +44,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 
+import com.google.inject.Key;
+import com.google.inject.name.Names;
+
 import org.forgerock.audit.events.AccessAuditEventBuilder;
 import org.forgerock.guava.common.collect.ImmutableMap;
 import org.forgerock.guice.core.InjectorHolder;
@@ -98,7 +101,7 @@ public class LogWriter {
             .put("realm where entity resides", "realm")
             .put("realm where circle of trust resides", "realm")
             .build();
-    private static final Client client = InjectorHolder.getInstance(Client.class);
+    private static final Client client = InjectorHolder.getInstance(Key.get(Client.class, Names.named("LogWriter")));
 
     private LogWriter() {
     }

@@ -24,7 +24,7 @@
  *
  * $Id: Wizard.java,v 1.27 2009/01/17 02:05:35 kevinserwin Exp $
  *
- * Portions Copyrighted 2010-2016 ForgeRock AS.
+ * Portions Copyrighted 2010-2017 ForgeRock AS.
  */
 
 package com.sun.identity.config.wizard;

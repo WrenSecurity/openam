@@ -24,7 +24,7 @@
  *
  * $Id: ImportServiceConfiguration.java,v 1.10 2010/01/11 17:34:33 veiming Exp $
  *
- * Portions Copyrighted 2010-2016 ForgeRock AS.
+ * Portions Copyrighted 2010-2017 ForgeRock AS.
  */
 
 package com.sun.identity.cli.schema;

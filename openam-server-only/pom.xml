@@ -12,7 +12,7 @@
  * Header, with the fields enclosed by brackets [] replaced by your own identifying
  * information: "Portions copyright [year] [name of copyright owner]".
  *
- * Copyright 2011-2016 ForgeRock AS.
+ * Copyright 2011-2017 ForgeRock AS.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
@@ -31,16 +31,8 @@
     <packaging>war</packaging>
 
     <properties>
-        <!-- Default settings for standard embedded dj. -->
-        <dj.backend.type>je</dj.backend.type>
         <!-- By default this property is empty so as not to include the SecurID auth module. -->
         <auth.securID.xml />
-        <!-- Default settings for the exclusion list to use for creating the opendj zip file. -->
-        <exclusion.list.filename>opendj_exclusion_list</exclusion.list.filename>
-        <!-- Default folder to use for pulling in third party distribution legal notices. -->
-        <third.party.legal.directory>legal</third.party.legal.directory>
-        <!-- Default value for whether the build is running in oem mode -->
-        <is.oem.build>false</is.oem.build>
 
         <full.version.information>@VERSION@ Build @REVISION@ (@DATESTAMP@)</full.version.information>
     </properties>
@@ -160,10 +152,6 @@
                                 <property name="core.xml.dir" value="${project.basedir}/../openam-core/src/main/resources/xml" />
 
                                 <property name="federation.xml.dir" value="${project.basedir}/../openam-federation/OpenFM/src/main/resources/xml" />
-
-                                <property name="exclusion.list" value="${exclusion.list.filename}" />
-
-                                <property name="is.oem" value="${is.oem.build}" />
 
                                 <ant antfile="${project.basedir}/openam-server-prepare-war.xml">
                                     <target name="openam-server-prepare-war" />
@@ -297,14 +285,6 @@
                         <webResource>
                             <!-- Copy all licenses into the legal-notices directory. -->
                             <directory>${project.build.directory}/legal-notices</directory>
-                            <includes>
-                                <include>**/**</include>
-                            </includes>
-                            <targetPath>legal-notices</targetPath>
-                        </webResource>
-                        <webResource>
-                            <!-- Copy all third-party licences too. -->
-                            <directory>${project.parent.basedir}/${third.party.legal.directory}</directory>
                             <includes>
                                 <include>**/**</include>
                             </includes>
@@ -457,14 +437,6 @@
     </build>
 
     <profiles>
-        <profile>
-            <id>with-oem</id>
-            <properties>
-                <exclusion.list.filename>opendj_oem_exclusion_list</exclusion.list.filename>
-                <third.party.legal.directory>legal-oem</third.party.legal.directory>
-                <is.oem.build>true</is.oem.build>
-            </properties>
-        </profile>
         <profile>
             <id>release</id>
             <dependencies>

@@ -22,7 +22,6 @@ import static org.forgerock.json.JsonValue.object;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -81,6 +80,8 @@ public final class NotificationsWebSocket {
     private long lastMessageTime;
     private ScheduledFuture<?> pingFuture;
 
+    private final Object lockObject = new Object();
+
     /**
      * No args constructor as required by JSR-356. Instances created
      * with this constructor are not expected to be used.
@@ -117,16 +118,20 @@ public final class NotificationsWebSocket {
         session.setMaxIdleTimeout(TIMEOUT_MILLISECONDS);
         lastMessageTime = timeService.now();
         pingFuture = executorService.scheduleAtFixedRate(new Runnable() {
+
             @Override
             public void run() {
                 try {
-                    if (session.isOpen()) {
-                        session.getAsyncRemote().sendPing(ByteBuffer.wrap("ping".getBytes()));
+                    synchronized (lockObject) {
+                        if (session.isOpen()) {
+                            session.getBasicRemote().sendPing(ByteBuffer.wrap("ping".getBytes()));
+                        }
                     }
                 } catch (IOException e) {
                     logger.info("Failed to send ping to client", e);
                 }
             }
+
         }, TIMEOUT_MILLISECONDS / 2, TIMEOUT_MILLISECONDS / 2, TimeUnit.MILLISECONDS);
     }
 
@@ -226,7 +231,7 @@ public final class NotificationsWebSocket {
                 json.put("id", id);
             }
 
-            session.getBasicRemote().sendObject(json);
+            sendJson(session, json);
         } catch (IOException | EncodeException e) {
             logger.warn("Unable to send message to client. Message was \"" + message + "\"", e);
         }
@@ -240,9 +245,17 @@ public final class NotificationsWebSocket {
                 json.put("id", id);
             }
 
-            session.getBasicRemote().sendObject(json);
+            sendJson(session, json);
         } catch (IOException | EncodeException e) {
             logger.warn("Unable to send error message to client. Error was \"" + message + "\"", e);
+        }
+    }
+
+    private void sendJson(Session session, JsonValue json) throws IOException, EncodeException {
+        synchronized (lockObject) {
+            if (session.isOpen()) {
+                session.getBasicRemote().sendObject(json);
+            }
         }
     }
 
@@ -255,10 +268,10 @@ public final class NotificationsWebSocket {
         }
 
         @Override
-        public void accept(JsonValue notification) {
+        public void accept(final JsonValue notification) {
             Reject.ifNull(notification);
 
-            if (timeService.since(lastMessageTime)  > TIMEOUT_MILLISECONDS) {
+            if (timeService.since(lastMessageTime) > TIMEOUT_MILLISECONDS) {
                 try {
                     session.close();
                 } catch (IOException e) {
@@ -267,8 +280,10 @@ public final class NotificationsWebSocket {
                 return;
             }
 
-            if (session.isOpen()) {
-                session.getAsyncRemote().sendObject(notification);
+            try {
+                sendJson(session, notification);
+            } catch (IOException | EncodeException e) {
+                logger.warn("Unable to send notification to client", e);
             }
         }
 

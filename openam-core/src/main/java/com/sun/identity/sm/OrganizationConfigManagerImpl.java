@@ -24,7 +24,7 @@
  *
  * $Id: OrganizationConfigManagerImpl.java,v 1.12 2009/07/25 05:11:55 qcheng Exp $
  *
- * Portions Copyrighted 2011-2015 ForgeRock AS.
+ * Portions Copyrighted 2011-2017 ForgeRock AS.
  */
 package com.sun.identity.sm;
 

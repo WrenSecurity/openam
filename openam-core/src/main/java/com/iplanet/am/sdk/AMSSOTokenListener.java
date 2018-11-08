@@ -1,4 +1,4 @@
-/**
+/*
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
  *
  * Copyright (c) 2005 Sun Microsystems Inc. All Rights Reserved
@@ -24,72 +24,58 @@
  *
  * $Id: AMSSOTokenListener.java,v 1.3 2008/06/25 05:41:22 qcheng Exp $
  *
+ * Portions Copyrighted 2016 ForgeRock AS.
  */
 
 package com.iplanet.am.sdk;
 
 import java.util.Set;
 
+import com.iplanet.dpro.session.watchers.listeners.SessionDeletionListener;
 import com.iplanet.sso.SSOException;
 import com.iplanet.sso.SSOToken;
-import com.iplanet.sso.SSOTokenEvent;
-import com.iplanet.sso.SSOTokenListener;
 import com.iplanet.sso.SSOTokenManager;
 
 /**
- * This class implements the <code>com.iplanet.sso.SSOTokenListene</code>
- * interface. This listener updates the profile name table, the objImplListeners
- * table and AMCommonUtils's dpCache by invalidating (removing) all entires
- * affected because of the SSOToken becoming invalid.
+ * This class implements the {@code SessionDeletionListener} interface.
+ * <p>
+ * This listener updates the profile name table, the objImplListeners table and AMCommonUtils's
+ * dpCache by invalidating (removing) all entries affected because of the SSOToken becoming invalid.
  *
  * @deprecated  As of Sun Java System Access Manager 7.1.
  */
-class AMSSOTokenListener implements SSOTokenListener {
+class AMSSOTokenListener implements SessionDeletionListener {
 
-    private String principalName = "";
-
-    /**
-     * Constructor to create a new instance of AMSSOTokenListener
-     * 
-     * @param principalName
-     *            the principal name of the SSOToken for which this listener has
-     *            been added.
-     */
-    public AMSSOTokenListener(String principalName) {
-        this.principalName = principalName;
+    @Override
+    public void sessionDeleted(String sessionId) {
+        SSOToken ssoToken;
+        try {
+            ssoToken = SSOTokenManager.getInstance().createSSOToken(sessionId);
+        } catch (SSOException ignored) {
+            // Failed to create token so no way for us to remove from cache.
+            return;
+        }
+        // Remove the entries for the SSOToken to which this listener
+        // corresponds to from the ProfileNameTable of AMObjectImpl class
+        Set dnSet = AMObjectImpl.removeFromProfileNameTable(ssoToken);
+        if (dnSet != null) {
+            AMCommonUtils.debug.message("In AMSSOTokenListener.ssoTokenChanged(): dnSet NOT null!");
+            // Also update the AMObjectImpl's objImplListener table
+            AMObjectImpl.removeObjImplListeners(dnSet, ssoToken.getTokenID());
+        }
     }
 
-    /**
-     * This method is the implementation for the SSOTokenListener interface.
-     */
-    public void ssoTokenChanged(SSOTokenEvent stEvent) {
-        boolean isValid;
-        SSOToken ssoToken = stEvent.getToken();
-        try {
-            isValid = SSOTokenManager.getInstance().isValidToken(ssoToken);
-        } catch (SSOException se) {
-            isValid = false;
+    @Override
+    public void connectionLost() {
+        for (String sessionId : AMObjectImpl.ProfileNameTable.INSTANCE.keys()) {
+            sessionDeleted(sessionId);
         }
+    }
 
-        if (AMCommonUtils.debug.messageEnabled()) {
-            AMCommonUtils.debug.message("In AMSSOTokenListener."
-                    + "ssoTokenChanged(): Principal: " + principalName
-                    + " ssoToken: " + isValid);
-        }
-
-        if (!isValid) {
-            // Remove the entires for the SSOToken to which this listener
-            // corresponds to from the ProfileNameTable of AMObjectImpl class
-            Set dnSet = AMObjectImpl.removeFromProfileNameTable(ssoToken);
-            if (dnSet != null) {
-                if (AMCommonUtils.debug.messageEnabled()) {
-                    AMCommonUtils.debug.message("In AMSSOTokenListener."
-                            + "ssoTokenChanged(): dnSet NOT null!");
-                }
-                // Also update the AMObjectImpl's objImplListener table
-                AMObjectImpl.removeObjImplListeners(dnSet, ssoToken
-                        .getTokenID());
-            }
+    @Override
+    public void initiationFailed() {
+        for (String sessionId : AMObjectImpl.ProfileNameTable.INSTANCE.keys()) {
+            sessionDeleted(sessionId);
         }
     }
 }

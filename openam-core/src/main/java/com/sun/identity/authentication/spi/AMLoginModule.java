@@ -266,7 +266,7 @@ public abstract class AMLoginModule implements LoginModule {
     private String headerWithReplaceTag;
     private boolean alreadyReplaced = false;
     private int lastState = 0;
-        
+
     /**
      * Holds handle to ResourceBundleCache to quickly get ResourceBundle for
      * any Locale.
@@ -1060,10 +1060,12 @@ public abstract class AMLoginModule implements LoginModule {
             }
             return process(callbacks, state);
         } catch (InvalidPasswordException e) {
+            setFailureReason(AMAuthErrorCode.AUTH_INVALID_PASSWORD);
             setFailureID(e.getTokenId());
             setFailureState();
             throw e;
         } catch (AuthLoginException e) {
+            setFailureReason(e.getErrorCode());
             setFailureState();
             throw e;
         } catch (LoginException e) {
@@ -1073,6 +1075,26 @@ public abstract class AMLoginModule implements LoginModule {
             setFailureState();
             throw re;
         }
+    }
+
+    /**
+     * Sets the <code>errorCode</code> for failed authentication
+     *
+     * @param errorCode reason for failed authentication.
+     */
+    private void setFailureReason(String errorCode) {
+        // get login state for this authentication session
+        if (errorCode == null) {
+            return;
+        }
+        if (loginState == null) {
+            loginState = getLoginState();
+            if (loginState == null) {
+                return;
+            }
+        }
+        loginState.setErrorCode(errorCode);
+        return ;
     }
 
     private void setFailureState() {

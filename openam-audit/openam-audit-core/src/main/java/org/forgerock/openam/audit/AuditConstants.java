@@ -243,7 +243,9 @@ public final class AuditConstants {
         /** Cannot create a session. */
         SESSION_CREATE_ERROR,
         /** Level based Auth. Invalid Auth Level. */
-        INVALID_LEVEL
+        INVALID_LEVEL,
+        /** User ID not found. **/
+        USERID_NOT_FOUND
     }
 
     /**

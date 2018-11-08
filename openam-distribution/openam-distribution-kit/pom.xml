@@ -135,6 +135,7 @@
         <dependency>
             <groupId>org.forgerock.openam</groupId>
             <artifactId>openam-clientsdk</artifactId>
+            <version>13.5.0-1</version>
             <type>jar</type>
         </dependency>
         <dependency>
@@ -150,11 +151,13 @@
         <dependency>
             <groupId>org.forgerock.openam</groupId>
             <artifactId>openam-example-clientsdk-cli</artifactId>
+            <version>13.5.0-1</version>
             <type>zip</type>
         </dependency>
         <dependency>
             <groupId>org.forgerock.openam</groupId>
             <artifactId>openam-example-clientsdk-war</artifactId>
+            <version>13.5.0-1</version>
             <type>war</type>
         </dependency>
         <dependency>

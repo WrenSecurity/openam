@@ -26,10 +26,7 @@
 
     $Id: DataStore.xml,v 1.4 2009/05/05 20:31:42 manish_rustagi Exp $
 
--->
-
-<!--
-    Portions Copyrighted 2013 ForgeRock AS
+    Portions Copyrighted 2013-2017 ForgeRock AS.
  -->
 
 <!DOCTYPE ModuleProperties PUBLIC "=//iPlanet//Authentication Module Properties XML Interface 1.0 DTD//EN"

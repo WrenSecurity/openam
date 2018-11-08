@@ -11,7 +11,7 @@
  * Header, with the fields enclosed by brackets [] replaced by your own identifying
  * information: "Portions copyright [year] [name of copyright owner]".
  *
- * Copyright 2013-2016 ForgeRock AS.
+ * Copyright 2013-2017 ForgeRock AS.
  */
 package org.forgerock.openam.cts.utils;
 
@@ -116,7 +116,7 @@ public class LdapTokenAttributeConversion {
     }
 
     private Object[] getMultiAttribute(Token token, CoreTokenField field) {
-        if (CoreTokenFieldTypes.isString(field)) {
+        if (CoreTokenFieldTypes.isString(field) || CoreTokenFieldTypes.isMulti(field)) {
             Collection<String> value = token.getAttribute(field);
             if (!CollectionUtils.isEmpty(value)) {
                 return value.toArray(new String[value.size()]);
@@ -188,7 +188,7 @@ public class LdapTokenAttributeConversion {
     }
 
     private Collection<?> parseMulti(CoreTokenField field, Entry entry, AttributeDescription description) {
-        if (CoreTokenFieldTypes.isString(field)) {
+        if (CoreTokenFieldTypes.isString(field) || CoreTokenFieldTypes.isMulti(field)) {
             return resolveEmptyMultiStringValues(entry, description);
         } else if (CoreTokenFieldTypes.isInteger(field)) {
             return entry.parseAttribute(description).asSetOfInteger();

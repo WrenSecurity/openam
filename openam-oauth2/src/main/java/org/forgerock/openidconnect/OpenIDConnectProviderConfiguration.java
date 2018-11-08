@@ -11,7 +11,7 @@
  * Header, with the fields enclosed by brackets [] replaced by your own identifying
  * information: "Portions copyright [year] [name of copyright owner]".
  *
- * Copyright 2014-2016 ForgeRock AS.
+ * Copyright 2014-2017 ForgeRock AS.
  */
 
 package org.forgerock.openidconnect;
@@ -100,6 +100,7 @@ public class OpenIDConnectProviderConfiguration {
         configuration.put("acr_values_supported", providerSettings.getAcrMapping().keySet());
         configuration.put("claims_parameter_supported", providerSettings.getClaimsParameterSupported());
         configuration.put("token_endpoint_auth_methods_supported", providerSettings.getEndpointAuthMethodsSupported());
+        configuration.put("introspection_endpoint", uris.getIntrospectionEndpoint());
 
         return new JsonValue(configuration);
     }

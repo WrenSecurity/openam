@@ -24,7 +24,7 @@
  *
  * $Id: FSUtils.java,v 1.10 2009/11/20 23:52:57 ww203982 Exp $
  *
- * Portions Copyrighted 2013-2016 ForgeRock AS.
+ * Portions Copyrighted 2013-2017 ForgeRock AS.
  */
 
 package com.sun.identity.federation.common;

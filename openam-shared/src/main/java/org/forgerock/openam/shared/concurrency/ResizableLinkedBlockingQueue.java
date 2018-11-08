@@ -11,7 +11,7 @@
 * Header, with the fields enclosed by brackets [] replaced by your own identifying
 * information: "Portions copyright [year] [name of copyright owner]".
 *
-* Copyright 2015 ForgeRock AS.
+* Copyright 2015-2017 ForgeRock AS.
 */
 package org.forgerock.openam.shared.concurrency;
 
@@ -65,11 +65,15 @@ public class ResizableLinkedBlockingQueue<E> extends LinkedBlockingQueue<E> {
      * permits.
      *
      * @param initialCapacity the initial number of permits available.
-     *        This value may be negative, in which case releases
-     *        must occur before any acquires will be granted.
+     * @throws IllegalArgumentException thrown when the given newSize is a minus number.
      */
     public ResizableLinkedBlockingQueue(int initialCapacity) {
         super();
+
+        if (initialCapacity < 0) {
+            throw new IllegalArgumentException("Cannot set queue size to a value below zero.");
+        }
+
         queueSize = initialCapacity;
         availablePlaces = new ResizableSemaphore(initialCapacity, true);
     }

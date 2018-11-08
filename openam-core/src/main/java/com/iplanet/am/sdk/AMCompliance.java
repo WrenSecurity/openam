@@ -24,7 +24,7 @@
  *
  * $Id: AMCompliance.java,v 1.8 2009/01/28 05:34:47 ww203982 Exp $
  *
- * Portions Copyright 2011-2015 ForgeRock AS.
+ * Portions Copyright 2011-2017 ForgeRock AS.
  */
 package com.iplanet.am.sdk;
 

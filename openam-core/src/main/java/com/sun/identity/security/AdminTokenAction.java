@@ -24,7 +24,7 @@
  *
  * $Id: AdminTokenAction.java,v 1.14 2009/06/19 02:35:11 bigfatrat Exp $
  *
- * Portions Copyrighted 2010-2015 ForgeRock AS.
+ * Portions Copyrighted 2010-2017 ForgeRock AS.
  */
 
 package com.sun.identity.security;

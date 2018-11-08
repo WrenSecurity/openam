@@ -24,7 +24,7 @@
  *
  * $Id: SMSEntry.java,v 1.53 2009/12/07 19:46:47 veiming Exp $
  *
- * Portions Copyrighted 2010-2015 ForgeRock AS.
+ * Portions Copyrighted 2010-2017 ForgeRock AS.
  */
 
 package com.sun.identity.sm;

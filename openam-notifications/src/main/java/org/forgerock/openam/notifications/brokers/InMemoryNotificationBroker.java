@@ -16,7 +16,9 @@
 
 package org.forgerock.openam.notifications.brokers;
 
-import static org.forgerock.json.JsonValue.*;
+import static org.forgerock.json.JsonValue.field;
+import static org.forgerock.json.JsonValue.json;
+import static org.forgerock.json.JsonValue.object;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -141,13 +143,20 @@ public final class InMemoryNotificationBroker implements NotificationBroker {
         public void run() {
             while (!shutdown) {
                 try {
-                    NotificationEntry entry = queue.poll(10L, TimeUnit.SECONDS);
+                    List<NotificationEntry> entries = new ArrayList<>();
+                    queue.drainTo(entries);
 
-                    if (entry == null) {
-                        continue;
+                    if (entries.isEmpty()) {
+                        NotificationEntry entry = queue.poll(10L, TimeUnit.SECONDS);
+
+                        if (entry == null) {
+                            continue;
+                        }
+
+                        entries.add(entry);
                     }
 
-                    deliver(entry);
+                    deliver(entries);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                     // Informs the broker that the reader is shutting down as
@@ -160,15 +169,15 @@ public final class InMemoryNotificationBroker implements NotificationBroker {
             List<NotificationEntry> remainingEntries = new ArrayList<>();
             queue.drainTo(remainingEntries);
 
-            for (NotificationEntry entry : remainingEntries) {
-                deliver(entry);
+            if (!remainingEntries.isEmpty()) {
+                deliver(remainingEntries);
             }
         }
 
-        private void deliver(NotificationEntry entry) {
+        private void deliver(List<NotificationEntry> entries) {
             for (InternalSubscription subscription : subscriptions) {
                 try {
-                    subscription.consumeIfApplicable(entry.topic, entry.notification);
+                    subscription.consumeIfApplicable(entries);
                 } catch (RuntimeException ex) {
                     logger.warn("Exception thrown whilst delivering notifications", ex);
                 }
@@ -218,13 +227,11 @@ public final class InMemoryNotificationBroker implements NotificationBroker {
         }
 
         // Called from reader thread.
-        void consumeIfApplicable(Topic topic, JsonValue notification) {
-            if (consumer == null) {
-                return;
-            }
-
-            if (isBoundTo(topic)) {
-                consumer.accept(notification);
+        void consumeIfApplicable(List<NotificationEntry> entries) {
+            for (NotificationEntry entry : entries) {
+                if (isBoundTo(entry.topic)) {
+                    consumer.accept(entry.notification);
+                }
             }
         }
     }

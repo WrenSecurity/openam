@@ -25,6 +25,11 @@ import static org.mockito.Mockito.*;
 
 import java.util.concurrent.TimeUnit;
 
+import com.iplanet.dpro.session.SessionException;
+import com.iplanet.dpro.session.SessionID;
+import com.iplanet.sso.SSOToken;
+import com.sun.identity.session.util.SessionUtilsWrapper;
+import com.sun.identity.shared.debug.Debug;
 import org.forgerock.openam.session.SessionEventType;
 import org.forgerock.openam.utils.TimeTravelUtil;
 import org.forgerock.openam.utils.TimeTravelUtil.FrozenTimeService;
@@ -35,12 +40,6 @@ import org.mockito.MockitoAnnotations;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
-
-import com.iplanet.dpro.session.SessionException;
-import com.iplanet.dpro.session.SessionID;
-import com.iplanet.sso.SSOToken;
-import com.sun.identity.session.util.SessionUtilsWrapper;
-import com.sun.identity.shared.debug.Debug;
 
 public class InternalSessionTest {
 
@@ -251,6 +250,86 @@ public class InternalSessionTest {
 
         // Then idle expiration time should occur at "21 minutes"
         assertThat(session.getMaxIdleExpirationTime(MINUTES)).isEqualTo(21);
+    }
+
+    @Test
+    public void when_TimedOutTimeInSecondsIsSet_isTimedOut_WillReturnTrue() throws Exception {
+        InternalSession session = createSession();
+        session.setTimedOutTime(1000L);
+
+        assertThat(session.isTimedOut()).isTrue();
+    }
+
+    @Test
+    public void when_SessionMaxTimeJustBeforeMaxSessionLifeTime_isTimedOut_WillReturnFalse() throws Exception {
+        InternalSession session = createSession();
+        session.setTimedOutTime(0L);
+        session.setMaxSessionTime(2L);
+
+        FrozenTimeService.INSTANCE.fastForward(119999, MILLISECONDS);
+
+        assertThat(session.isTimedOut()).isFalse();
+    }
+
+    @Test
+    public void when_SessionMaxTimeMatchesMaxSessionLifeTime_isTimedOut_WillReturnTrue() throws Exception {
+        InternalSession session = createSession();
+        session.setTimedOutTime(0L);
+        session.setMaxSessionTime(2L);
+
+        FrozenTimeService.INSTANCE.fastForward(2, MINUTES);
+
+        assertThat(session.isTimedOut()).isTrue();
+    }
+
+    @Test
+    public void when_SessionMaxTimeExceedsMaxSessionLifeTime_isTimedOut_WillReturnTrue() throws Exception {
+        InternalSession session = createSession();
+        session.setTimedOutTime(0L);
+        session.setMaxSessionTime(2L);
+
+        FrozenTimeService.INSTANCE.fastForward(120001, MILLISECONDS);
+
+        assertThat(session.isTimedOut()).isTrue();
+    }
+
+    @Test
+    public void when_SessionIdleTimeJustBeforeMaxIdleTime_isTimedOut_WillReturnFalse() throws Exception {
+        InternalSession session = createSession();
+        session.setTimedOutTime(0L);
+        session.setMaxSessionTime(5L);
+        session.setLatestAccessTime();
+        session.setMaxIdleTime(2L);
+
+        FrozenTimeService.INSTANCE.fastForward(119999, MILLISECONDS);
+
+        assertThat(session.isTimedOut()).isFalse();
+    }
+
+    @Test
+    public void when_SessionIdleTimeMatchesMaxIdleTime_isTimedOut_WillReturnTrue() throws Exception {
+        InternalSession session = createSession();
+        session.setTimedOutTime(0L);
+        session.setMaxSessionTime(5L);
+        session.setLatestAccessTime();
+        session.setMaxIdleTime(2L);
+
+        FrozenTimeService.INSTANCE.fastForward(2, MINUTES);
+
+        assertThat(session.isTimedOut()).isTrue();
+    }
+
+    @Test
+    public void when_SessionIdleTimeExceedsMaxIdleTime_isTimedOut_WillReturnTrue() throws Exception {
+        InternalSession session = createSession();
+        session.setTimedOutTime(0L);
+        session.setMaxSessionTime(5L);
+        session.setLatestAccessTime();
+        session.setMaxIdleTime(2L);
+
+        FrozenTimeService.INSTANCE.fastForward(120001, MILLISECONDS);
+
+        assertThat(session.isTimedOut()).isTrue();
     }
 
     private void verifyEvent(InternalSession session, SessionEventType eventType) {

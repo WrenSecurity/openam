@@ -140,22 +140,17 @@ public class SmsAggregatingAgentsQueryHandler {
         ServiceConfigManager scm = new ServiceConfigManager(ssoToken, serviceName, serviceVersion);
         String realm = context.asContext(RealmContext.class).getRealm().asPath();
         ServiceConfig config = scm.getOrganizationConfig(realm, null);
-        Set<String> schemaNames = schema.getSubSchemaNames();
 
         Collection<JsonValue> queryRes = new HashSet<>();
-        for (String schemaName : schemaNames) {
-            if (!OAUTH2_CLIENT.equals(schemaName)) {
-                Set<String> names = config.getSubConfigNames("*", schemaName);
-                for (String configName : names) {
-                    ServiceConfig subConfig = config.getSubConfig(configName);
-                    SmsJsonConverter converter = converters.get(schemaName);
-                    JsonValue value = converter.toJson(realm, subConfig.getAttributes(), false, json(object()));
-                    value.add("_id", configName);
-                    value.add("_type", schemaName);
-                    transformAgentJson(value);
-                    queryRes.add(value);
-                }
-            }
+        Set<String> names = config.getSubConfigNames();
+        for (String configName : names) {
+            ServiceConfig subConfig = config.getSubConfig(configName);
+            SmsJsonConverter converter = converters.get(subConfig.getSchemaID());
+            JsonValue value = converter.toJson(realm, subConfig.getAttributes(), false, json(object()));
+            value.add("_id", configName);
+            value.add("_type", subConfig.getSchemaID());
+            transformAgentJson(value);
+            queryRes.add(value);
         }
         return queryRes;
     }

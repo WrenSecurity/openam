@@ -24,7 +24,7 @@
  *
  * $Id: CoreTokenUtils.java,v 1.1 2009/11/19 00:07:40 qcheng Exp $
  *
- * Portions Copyright 2015-2016 ForgeRock AS.
+ * Portions Copyright 2015-2017 ForgeRock AS.
  */
 
 package com.sun.identity.coretoken;

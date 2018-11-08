@@ -11,7 +11,7 @@
  * Header, with the fields enclosed by brackets [] replaced by your own identifying
  * information: "Portions copyright [year] [name of copyright owner]".
  *
- * Copyright 2014-2016 ForgeRock AS.
+ * Copyright 2014-2017 ForgeRock AS.
  */
 
 package org.forgerock.openam.scripting;
@@ -153,8 +153,13 @@ public final class ThreadPoolScriptEvaluator implements ScriptEvaluator {
                                 .getDelegate())
                                 .getQueue());
                 int currentThreadPoolQueueSize = currentQueue.getMaximumQueueSize();
+
                 if (newThreadPoolQueueSize != currentThreadPoolQueueSize) {
-                    currentQueue.resizeQueue(newThreadPoolQueueSize);
+                    if (newThreadPoolQueueSize == ScriptEngineConfiguration.UNBOUNDED_QUEUE_SIZE) {
+                        currentQueue.resizeQueue(Integer.MAX_VALUE);
+                    } else {
+                        currentQueue.resizeQueue(newThreadPoolQueueSize);
+                    }
                 }
 
                 if (delegateConfigurator.getCorePoolSize() != newConfiguration.getThreadPoolCoreSize() ||

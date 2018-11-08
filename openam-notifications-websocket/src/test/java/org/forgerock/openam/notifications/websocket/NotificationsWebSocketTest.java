@@ -23,18 +23,21 @@ import static org.forgerock.json.JsonValue.object;
 import static org.forgerock.json.test.assertj.AssertJJsonValueAssert.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.when;
+
+import java.nio.ByteBuffer;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 import javax.websocket.PongMessage;
 import javax.websocket.RemoteEndpoint;
 import javax.websocket.Session;
-
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.util.concurrent.RunnableFuture;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
 
 import org.forgerock.json.JsonValue;
 import org.forgerock.openam.notifications.Consumer;
@@ -67,8 +70,6 @@ public final class NotificationsWebSocketTest {
     @Mock
     private RemoteEndpoint.Basic basic;
     @Mock
-    private RemoteEndpoint.Async async;
-    @Mock
     private TimeService timeService;
     @Mock
     private ScheduledExecutorService executorService;
@@ -86,7 +87,6 @@ public final class NotificationsWebSocketTest {
         notificationsWebSocket = new NotificationsWebSocket(broker, timeService, executorService);
         when(broker.subscribe(any(Consumer.class))).thenReturn(subscription);
         when(session.getBasicRemote()).thenReturn(basic);
-        when(session.getAsyncRemote()).thenReturn(async);
     }
 
     @Test
@@ -126,7 +126,7 @@ public final class NotificationsWebSocketTest {
         runnableCaptor.getValue().run();
 
         // Then
-        verify(async).sendPing(any(ByteBuffer.class));
+        verify(basic).sendPing(any(ByteBuffer.class));
     }
 
     @Test
@@ -144,6 +144,9 @@ public final class NotificationsWebSocketTest {
 
     @Test
     public void whenSubscriptionRequestSentThenReplyIsSent() throws Exception {
+        // Given
+        when(session.isOpen()).thenReturn(true);
+
         // When
         notificationsWebSocket.open(session);
         notificationsWebSocket.message(session, json(object(
@@ -157,7 +160,26 @@ public final class NotificationsWebSocketTest {
     }
 
     @Test
+    public void whenWebSocketSessionIsClosedNoMoreMessagesAreSent() {
+        // Given
+        when(session.isOpen()).thenReturn(false);
+
+        // When
+        notificationsWebSocket.open(session);
+        notificationsWebSocket.message(session, json(object(
+                field("action", "subscribe"),
+                field("topic", "test_topic")
+        )));
+
+        // Then
+        verifyZeroInteractions(basic);
+    }
+
+    @Test
     public void whenIdIsPassedInRequestThenIdIsPresentInResponse() throws Exception {
+        // Given
+        when(session.isOpen()).thenReturn(true);
+
         // When
         notificationsWebSocket.open(session);
         notificationsWebSocket.message(session, json(object(
@@ -173,6 +195,9 @@ public final class NotificationsWebSocketTest {
 
     @Test
     public void whenNoIdIsPassedInRequestThenNoIdIsPresentInResponse() throws Exception {
+        // Given
+        when(session.isOpen()).thenReturn(true);
+
         // When
         notificationsWebSocket.open(session);
         notificationsWebSocket.message(session, json(object(
@@ -187,6 +212,9 @@ public final class NotificationsWebSocketTest {
 
     @Test
     public void whenActionIsMissingFromRequestSendsErrorMessage() throws Exception {
+        // Given
+        when(session.isOpen()).thenReturn(true);
+
         // When
         notificationsWebSocket.open(session);
         notificationsWebSocket.message(session, json(object(
@@ -200,6 +228,9 @@ public final class NotificationsWebSocketTest {
 
     @Test
     public void whenActionIsNotSubscribeTheRequestSendsErrorMessage() throws Exception {
+        // Given
+        when(session.isOpen()).thenReturn(true);
+
         // When
         notificationsWebSocket.open(session);
         notificationsWebSocket.message(session, json(object(
@@ -214,6 +245,9 @@ public final class NotificationsWebSocketTest {
 
     @Test
     public void whenActionIsNotAStringInTheRequestSendsErrorMessage() throws Exception {
+        // Given
+        when(session.isOpen()).thenReturn(true);
+
         // When
         notificationsWebSocket.open(session);
         notificationsWebSocket.message(session, json(object(
@@ -228,6 +262,9 @@ public final class NotificationsWebSocketTest {
 
     @Test
     public void whenTopicIsMissingFromRequestSendsErrorMessage() throws Exception {
+        // Given
+        when(session.isOpen()).thenReturn(true);
+
         // When
         notificationsWebSocket.open(session);
         notificationsWebSocket.message(session, json(object(
@@ -241,6 +278,9 @@ public final class NotificationsWebSocketTest {
 
     @Test
     public void whenTopicIsNotAStringInTheRequestSendsErrorMessage() throws Exception {
+        // Given
+        when(session.isOpen()).thenReturn(true);
+
         // When
         notificationsWebSocket.open(session);
         notificationsWebSocket.message(session, json(object(
@@ -255,6 +295,9 @@ public final class NotificationsWebSocketTest {
 
     @Test
     public void whenThereIsAnErrorAndIdInRequestItIsIncludedInErrorMessage() throws Exception {
+        // Given
+        when(session.isOpen()).thenReturn(true);
+
         // When
         notificationsWebSocket.open(session);
         notificationsWebSocket.message(session, json(object(
@@ -271,6 +314,9 @@ public final class NotificationsWebSocketTest {
 
     @Test
     public void whenThereIsAnIdThatIsNotAStringRequestSendsErrorMessage() throws Exception {
+        // Given
+        when(session.isOpen()).thenReturn(true);
+
         // When
         notificationsWebSocket.open(session);
         notificationsWebSocket.message(session, json(object(
@@ -297,7 +343,7 @@ public final class NotificationsWebSocketTest {
         consumer.accept(json(object(field("some_key", "some_value"))));
 
         // Then
-        verify(async).sendObject(jsonCaptor.capture());
+        verify(basic).sendObject(jsonCaptor.capture());
         assertThat(jsonCaptor.getValue()).stringAt("some_key").isEqualTo("some_value");
     }
 
@@ -314,7 +360,7 @@ public final class NotificationsWebSocketTest {
         consumer.accept(json(object(field("some_key", "some_value"))));
 
         // Then
-        verify(async, never()).sendObject(any(JsonValue.class));
+        verify(basic, never()).sendObject(any(JsonValue.class));
     }
 
     @Test
@@ -332,7 +378,7 @@ public final class NotificationsWebSocketTest {
 
         // Then
         verify(session).close();
-        verify(async, never()).sendObject(any(JsonValue.class));
+        verify(basic, never()).sendObject(any(JsonValue.class));
     }
 
     @Test

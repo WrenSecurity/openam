@@ -24,7 +24,7 @@
 
    $Id: realmSelection.jsp,v 1.10 2009/10/29 00:00:00 exu Exp $
 
-    Portions Copyrighted 2013-2016 ForgeRock AS.
+    Portions Copyrighted 2013-2017 ForgeRock AS.
 --%>
 
 <%@page
@@ -288,7 +288,7 @@
       <td>&nbsp;</td>
       <td>
         <div class="logCpy"><span class="logTxtCpy">
-          Copyright &copy; 2008-2016, ForgeRock AS. All Rights Reserved. Use of this software is subject to the terms and conditions of the ForgeRock&#8482; License and Subscription Agreement.
+          Copyright &copy; 2008-2017, ForgeRock AS. All Rights Reserved. Use of this software is subject to the terms and conditions of the ForgeRock&#8482; License and Subscription Agreement.
         </div>
       </td>
       <td>&nbsp;</td>

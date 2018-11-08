@@ -87,6 +87,9 @@ public class AuthenticationServiceV2 extends AuthenticationServiceV1 {
         }
         Map<String, Object> mapRepresentation = jsonResponse.asMap();
         response.setEntity(mapRepresentation);
+
+        setNoCacheHeaders(response);
+
         return response;
     }
 }

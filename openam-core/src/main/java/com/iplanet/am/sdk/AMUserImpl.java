@@ -24,7 +24,7 @@
  *
  * $Id: AMUserImpl.java,v 1.7 2009/11/20 23:52:51 ww203982 Exp $
  *
- * Portions Copyright 2015 ForgeRock AS.
+ * Portions Copyright 2015-2017 ForgeRock AS.
  */
 
 package com.iplanet.am.sdk;

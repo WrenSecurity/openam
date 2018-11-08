@@ -11,7 +11,7 @@
  * Header, with the fields enclosed by brackets [] replaced by your own identifying
  * information: "Portions copyright [year] [name of copyright owner]".
  *
- * Copyright 2015 ForgeRock AS.
+ * Copyright 2015-2016 ForgeRock AS.
  */
 package com.sun.identity.authentication.audit;
 
@@ -21,6 +21,7 @@ import static org.forgerock.audit.events.AuthenticationAuditEventBuilder.Status.
 import static org.forgerock.openam.audit.AuditConstants.AUTHENTICATION_TOPIC;
 import static org.forgerock.openam.audit.AuditConstants.Component.AUTHENTICATION;
 import static org.forgerock.openam.audit.AuditConstants.EntriesInfoFieldKey.AUTH_CONTROL_FLAG;
+import static org.forgerock.openam.audit.AuditConstants.EntriesInfoFieldKey.FAILURE_REASON;
 import static org.forgerock.openam.audit.AuditConstants.EventName.AM_LOGIN_MODULE_COMPLETED;
 import static org.forgerock.openam.audit.AuditConstants.LOGIN_MODULE_CONTROL_FLAG;
 import static org.forgerock.openam.audit.context.AuditRequestContext.getTransactionIdValue;
@@ -28,14 +29,17 @@ import static org.forgerock.openam.utils.StringUtils.isEmpty;
 import static org.forgerock.openam.utils.StringUtils.isNotEmpty;
 
 import com.sun.identity.authentication.service.LoginState;
+
 import org.forgerock.audit.events.AuthenticationAuditEventBuilder.Status;
 import org.forgerock.openam.audit.AMAuthenticationAuditEventBuilder;
+import org.forgerock.openam.audit.AuditConstants.AuthenticationFailureReason;
 import org.forgerock.openam.audit.AuditEventFactory;
 import org.forgerock.openam.audit.AuditEventPublisher;
 import org.forgerock.openam.audit.context.AuditRequestContext;
 import org.forgerock.openam.audit.model.AuthenticationAuditEntry;
 
 import javax.inject.Inject;
+
 import java.security.Principal;
 import java.util.Map;
 
@@ -91,6 +95,11 @@ public class AuthenticationModuleEventAuditor extends AbstractAuthenticationEven
         if (eventPublisher.isAuditing(realm, AUTHENTICATION_TOPIC, AM_LOGIN_MODULE_COMPLETED)) {
             String principalName = principal == null ? getFailedPrincipal(loginState) : principal.getName();
             String authId = getUserId(principalName, realm);
+
+            AuthenticationFailureReason failureReason = findFailureReason(loginState);
+            if (auditEntryDetail != null && failureReason != null) {
+                auditEntryDetail.addInfo(FAILURE_REASON, failureReason.name());
+            }
 
             auditModuleEvent(loginState, realm, principalName, authId, FAILED, auditEntryDetail);
         }

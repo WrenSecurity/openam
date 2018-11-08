@@ -24,7 +24,7 @@
   
    $Id: sms.dtd,v 1.8 2008/09/04 23:59:39 veiming Exp $
   
-   Portions Copyrighted 2014-2016 ForgeRock AS.
+   Portions Copyrighted 2014-2017 ForgeRock AS.
 -->
 
 <!-- This DTD defines the data structure that will be used by services to define their configuration information and their management tasks.

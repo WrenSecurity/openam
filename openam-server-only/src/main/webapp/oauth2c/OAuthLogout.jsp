@@ -1,7 +1,7 @@
 <%--
    DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
 
-   Copyright (c) 2011-2013 ForgeRock AS. All rights reserved.
+   Copyright (c) 2011-2017 ForgeRock AS. All rights reserved.
 
    The contents of this file are subject to the terms
    of the Common Development and Distribution License
@@ -38,11 +38,9 @@
 <%@ page import="java.util.Locale" %>
 <%@ page import="java.util.MissingResourceException" %>
 <%@ page import="org.forgerock.openam.authentication.modules.oauth2.OAuthUtil" %>
-<%@ page import="com.iplanet.sso.SSOTokenManager" %>
-<%@ page import="com.iplanet.sso.SSOException" %>
-<%@ page import="com.iplanet.sso.SSOToken" %>
+<%@ page import="org.forgerock.openam.utils.StringUtils" %>
 <%@ page import="com.sun.identity.authentication.service.AuthD" %>
-<%@ page import="com.sun.identity.idm.AMIdentity" %>
+
 <%
    // Internationalization stuff. You can use any internationalization framework
    String lang = request.getParameter("lang");
@@ -80,20 +78,16 @@
    String gotoURL = request.getParameter(PARAM_GOTO);
    String gotoURLencAttr = "";
    String OAuth2IdP = "";
+   boolean isValidGotoUrl = false;
    
    String ServiceURI = SystemProperties.get(Constants.AM_SERVICES_DEPLOYMENT_DESCRIPTOR);
-   SSOTokenManager manager = SSOTokenManager.getInstance();
-   try {
-       SSOToken ssoToken = manager.createSSOToken(request);
-       String realm = ssoToken.getProperty("Organization");
-       boolean isValidGotoUrl = AuthD.getAuth().isGotoUrlValid(gotoURL, realm)
+   String realm = request.getParameter(PARAM_LOGOUT_REALM);
+   if (StringUtils.isNotEmpty(realm)) {
+       isValidGotoUrl = AuthD.getAuth().isGotoUrlValid(gotoURL, realm)
                && ESAPI.validator().isValidInput("URLContext", gotoURL, "HTTPURI", 2000, false);
-       if (!isValidGotoUrl) {
-           OAuthUtil.debugError("OAuthLogout: invalid or empty goto URL ignored on Logout page: " + gotoURL);
-           gotoURL = ServiceURI + "/UI/Logout";
-       }
-   } catch (SSOException e) {
-       OAuthUtil.debugMessage("OAuthLogout: using default goto URL because we failed to get a session");
+   }
+   if (!isValidGotoUrl) {
+       OAuthUtil.debugError("OAuthLogout: invalid or empty goto URL ignored on Logout page: " + gotoURL);
        gotoURL = ServiceURI + "/UI/Logout";
    }
    gotoURL = ESAPI.encoder().encodeForJavaScript(gotoURL);

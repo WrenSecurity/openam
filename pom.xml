@@ -105,16 +105,16 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <!-- Version Properties -->
-        <opendj.server.version>4.0.0-M1</opendj.server.version>
-        <opendj.sdk.version>4.0.0-M1</opendj.sdk.version>
-        <opendj.server.legacy>4.0.0-M1</opendj.server.legacy>
+        <opendj.server.version>4.0.0-RC5</opendj.server.version>
+        <opendj.sdk.version>4.0.0-RC5</opendj.sdk.version>
+        <opendj.server.legacy>4.0.0-RC5</opendj.server.legacy>
 
         <!-- Supress checkstyle errors on legacy com.iplanet and com.sun.identity packages -->
         <checkstyleUnitTestSuppressionsLocation>checkstyle/suppressions.xml</checkstyleUnitTestSuppressionsLocation>
 
         <forgerock.bloomfilter.version>1.0.1</forgerock.bloomfilter.version>
-        <forgerock.ui.version>15.2.6</forgerock.ui.version>
-        <forgerock.guice.version>1.1.0</forgerock.guice.version>
+        <forgerock.ui.version>16.0.4</forgerock.ui.version>
+        <forgerock.guice.version>2.0.2</forgerock.guice.version>
 
         <javadoc-utils.version>1.0.0</javadoc-utils.version>
         <ant.contrib.version>1.0b3</ant.contrib.version>
@@ -143,7 +143,6 @@
         <jaxrpc-impl.version>1.1.3_01-20160905</jaxrpc-impl.version>
         <jaxrpc-spi.version>1.1.3_01</jaxrpc-spi.version>
         <jdom.version>2.0.1</jdom.version>
-        <je.version>5.0.104</je.version>
         <jersey-bundle.version>1.1.1-ea</jersey-bundle.version>
         <jato.version>2005-05-04</jato.version>
         <cc-ui.version>2008-08-08</cc-ui.version>
@@ -507,6 +506,16 @@
             </snapshots>
         </repository>
 
+        <!-- This is required to pull in the 13.5.0-1 clientsdk -->
+        <repository>
+            <id>forgerock-private-releases</id>
+            <name>ForgeRock Private Release Repository</name>
+            <url>http://maven.forgerock.org/repo/private-releases</url>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+
         <repository>
             <id>forgerock-snapshots-repository</id>
             <name>ForgeRock Snapshot Repository</name>
@@ -587,7 +596,7 @@
             <dependency>
                 <groupId>org.forgerock.commons</groupId>
                 <artifactId>commons-bom</artifactId>
-                <version>21.0.0-alpha-23</version>
+                <version>21.0.0</version>
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>
@@ -1396,13 +1405,6 @@
                 <groupId>org.jdom</groupId>
                 <artifactId>jdom</artifactId>
                 <version>${jdom.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>com.sleepycat</groupId>
-                <artifactId>je</artifactId>
-                <version>${je.version}</version>
-                <scope>runtime</scope>
             </dependency>
 
             <dependency>

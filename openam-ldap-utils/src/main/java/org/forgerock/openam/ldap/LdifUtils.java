@@ -53,6 +53,7 @@ import org.forgerock.opendj.ldap.requests.ModifyRequest;
 import org.forgerock.opendj.ldif.ChangeRecord;
 import org.forgerock.opendj.ldif.ChangeRecordVisitor;
 import org.forgerock.opendj.ldif.LDIFChangeRecordReader;
+import org.forgerock.util.promise.NeverThrowsException;
 
 /**
  * Utility class for LDIF operations.
@@ -99,7 +100,7 @@ public final class LdifUtils {
     public static void createSchemaFromLDIF(LDIFChangeRecordReader ldif, final Connection ld) throws IOException {
         while (ldif.hasNext()) {
             final ChangeRecord changeRecord = ldif.readChangeRecord();
-            changeRecord.accept(new ChangeRecordVisitor<Void, Void>() {
+            changeRecord.accept(new ChangeRecordVisitor<Void, Void, NeverThrowsException>() {
                 @Override
                 public Void visitChangeRecord(Void aVoid, AddRequest change) {
                     try {

@@ -238,9 +238,6 @@ public class OAuth extends AMLoginModule {
                 // The Proxy is used to return with a POST to the module
                 setUserSessionProperty(ISAuthConstants.FULL_LOGIN_URL, originalUrl.toString());
 
-                setUserSessionProperty(SESSION_LOGOUT_BEHAVIOUR,
-                        config.getLogoutBhaviour());
-
                 String authServiceUrl = config.getAuthServiceUrl(proxyURL, csrfState);
                 OAuthUtil.debugMessage("OAuth.process(): New RedirectURL=" + authServiceUrl);
 
@@ -324,6 +321,9 @@ public class OAuth extends AMLoginModule {
                     if (realm == null) {
                         realm = "/";
                     }
+
+                    setUserSessionProperty(SESSION_LOGOUT_BEHAVIOUR,
+                            config.getLogoutBhaviour());
 
                     AccountProvider accountProvider = instantiateAccountProvider();
                     AttributeMapper accountAttributeMapper = instantiateAccountMapper();

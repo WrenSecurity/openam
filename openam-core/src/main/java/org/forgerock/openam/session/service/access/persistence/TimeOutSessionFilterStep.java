@@ -16,8 +16,6 @@
 
 package org.forgerock.openam.session.service.access.persistence;
 
-import java.util.concurrent.TimeUnit;
-
 import com.iplanet.dpro.session.SessionID;
 import com.iplanet.dpro.session.service.InternalSession;
 
@@ -52,33 +50,11 @@ public class TimeOutSessionFilterStep extends AbstractInternalSessionStoreStep {
 
     private InternalSession processInternalSession(
             final InternalSession internalSession) throws SessionPersistenceException {
-        if (internalSession == null || isSessionTimedOut(internalSession)) {
+        if (internalSession == null || internalSession.isTimedOut()) {
             // The session will not be returned if it has timed out
             // The filter step is not responsible for tidying up timed out sessions - the reaper will take care of that
             return null;
         }
         return internalSession;
-    }
-
-    private boolean isSessionTimedOut(final InternalSession internalSession) {
-        // the session has already been timed out by a session monitor task
-        if (internalSession.isTimedOut()) {
-            return true;
-        }
-        // the session will not time out
-        if (!internalSession.willExpire()) {
-            return false;
-        }
-        // the session has passed its maximum session life
-        if (0 >= internalSession.getTimeLeft()) {
-            return true;
-        }
-        // the session has reached its maximum idle time
-        if (internalSession.getIdleTime() >
-                TimeUnit.SECONDS.convert(internalSession.getMaxIdleTime(), TimeUnit.MINUTES)) {
-            return true;
-        }
-        // the session has not timed out
-        return false;
     }
 }

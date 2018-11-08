@@ -24,7 +24,7 @@
  *
  * $Id: PolicyManager.java,v 1.19 2010/01/25 23:48:15 veiming Exp $
  *
- * Portions Copyrighted 2011-2016 ForgeRock AS.
+ * Portions Copyrighted 2011-2017 ForgeRock AS.
  */
 
 package com.sun.identity.policy;

@@ -24,7 +24,7 @@
  *
  * $Id: FSReturnSessionManager.java,v 1.4 2009/01/28 05:35:07 ww203982 Exp $
  *
- * Portions Copyright 2015 ForgeRock AS.
+ * Portions Copyright 2015-2017 ForgeRock AS.
  */
 
 package com.sun.identity.federation.services.logout;

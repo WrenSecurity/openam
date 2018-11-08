@@ -16,7 +16,10 @@
 
 package com.iplanet.dpro.session.service;
 
-import static org.forgerock.json.JsonValue.*;
+import static org.forgerock.json.JsonValue.field;
+import static org.forgerock.json.JsonValue.json;
+import static org.forgerock.json.JsonValue.object;
+import static org.forgerock.openam.utils.HashUtil.generateBase64Hash;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -27,6 +30,8 @@ import org.forgerock.openam.notifications.NotificationBroker;
 import org.forgerock.openam.notifications.NotificationsConfig;
 import org.forgerock.openam.notifications.Topic;
 import org.forgerock.openam.session.SessionEventType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.iplanet.dpro.session.SessionID;
 import com.sun.identity.shared.debug.Debug;
@@ -79,8 +84,9 @@ public class SessionNotificationPublisher implements InternalSessionListener {
     }
 
     private void publishSessionNotification(SessionID sessionId, SessionEventType sessionEventType) {
+        String sessionUid = generateBase64Hash(sessionId.toString());
         JsonValue notification = json(object(
-                field("tokenId", sessionId.toString()),
+                field("sessionuid", sessionUid),
                 field("eventType", sessionEventType)));
         broker.publish(Topic.of("/agent/session"), notification);
     }

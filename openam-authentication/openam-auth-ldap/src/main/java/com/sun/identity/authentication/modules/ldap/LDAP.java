@@ -30,6 +30,7 @@
 package com.sun.identity.authentication.modules.ldap;
 
 import static org.forgerock.openam.utils.Time.*;
+import static com.sun.identity.authentication.service.AMAuthErrorCode.USERID_NOT_FOUND;
 
 import com.sun.identity.authentication.spi.AMAuthCallBackImpl;
 import com.sun.identity.authentication.spi.AMAuthCallBackException;
@@ -40,6 +41,7 @@ import com.sun.identity.authentication.spi.UserNamePasswordValidationException;
 import com.sun.identity.authentication.util.ISAuthConstants;
 import com.sun.identity.shared.datastruct.CollectionHelper;
 import com.sun.identity.shared.debug.Debug;
+
 import java.security.Principal;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -49,6 +51,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.Set;
+
 import javax.security.auth.Subject;
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.ConfirmationCallback;
@@ -462,7 +465,7 @@ public class LDAP extends AMLoginModule {
                     debug.message("The specified user does not exist.");
                 }
 
-                throw new AuthLoginException(AM_AUTH, "NoUser", null);
+                throw new AuthLoginException(AM_AUTH, USERID_NOT_FOUND, null);
             } else if (ex.getResultCode().equals(ResultCode.INVALID_CREDENTIALS)) {
                 if (debug.messageEnabled()) {
                     debug.message("Invalid password.");
@@ -545,7 +548,6 @@ public class LDAP extends AMLoginModule {
     }
 
     private void processLoginScreen(ModuleState newState) throws AuthLoginException {
-        try {
             switch (newState) {
                 case SUCCESS:
                     validatedUserID = ldapUtil.getUserId();
@@ -634,22 +636,16 @@ public class LDAP extends AMLoginModule {
                     currentState = LoginScreen.PASSWORD_CHANGE.intValue();
                 case USER_NOT_FOUND:
                     setFailureID(userName);
-                    throw new LDAPUtilException("noUserMatchFound", (Object[])null);
+                    if (getCredentialsFromSharedState && !isUseFirstPassEnabled()) {
+                        getCredentialsFromSharedState = false;
+                        currentState = LoginScreen.LOGIN_START.intValue();
+                        return;
+                    }
+                    throw new AuthLoginException(AM_AUTH, USERID_NOT_FOUND, null);
                 case SERVER_DOWN:
                     throw new AuthLoginException(AM_AUTH, "LDAPex", null);
                 default:
             }
-        } catch (LDAPUtilException ex) {
-            if (getCredentialsFromSharedState && !isUseFirstPassEnabled()) {
-                getCredentialsFromSharedState = false;
-                currentState = LoginScreen.LOGIN_START.intValue();
-                return;
-            }
-            if (newState != ModuleState.USER_NOT_FOUND) {
-                debug.error("Unknown Login State:", ex);
-            }
-            throw new AuthLoginException(AM_AUTH, "LDAPex", null, ex);
-        }
     }
 
     private void processPasswordScreen(ModuleState newState)

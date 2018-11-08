@@ -24,7 +24,7 @@
  *
  * $Id: DefaultPartnerAccountMapper.java,v 1.7 2010/01/09 19:41:52 qcheng Exp $
  *
- * Portions Copyright 2015 ForgeRock AS.
+ * Portions Copyright 2015-2017 ForgeRock AS.
  */
 
 package com.sun.identity.saml.plugins;

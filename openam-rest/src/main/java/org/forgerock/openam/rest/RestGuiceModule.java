@@ -11,7 +11,7 @@
  * Header, with the fields enclosed by brackets [] replaced by your own identifying
  * information: "Portions copyright [year] [name of copyright owner]".
  *
- * Copyright 2015-2016 ForgeRock AS.
+ * Copyright 2015-2017 ForgeRock AS.
  */
 
 package org.forgerock.openam.rest;
@@ -45,10 +45,13 @@ import org.forgerock.caf.authentication.api.AuthenticationException;
 import org.forgerock.caf.authentication.framework.AuditApi;
 import org.forgerock.caf.authentication.framework.AuthenticationFilter;
 import org.forgerock.guice.core.GuiceModule;
+import org.forgerock.http.ApiProducer;
 import org.forgerock.http.Handler;
 import org.forgerock.http.handler.DescribableHandler;
 import org.forgerock.http.handler.Handlers;
+import org.forgerock.http.protocol.Request;
 import org.forgerock.http.routing.ResourceApiVersionBehaviourManager;
+import org.forgerock.http.routing.UriRouterContext;
 import org.forgerock.json.resource.Applications;
 import org.forgerock.json.resource.CrestApplication;
 import org.forgerock.json.resource.Filter;
@@ -61,6 +64,9 @@ import org.forgerock.openam.rest.fluent.CrestLoggingFilter;
 import org.forgerock.openam.rest.resource.SSOTokenContext;
 import org.forgerock.openam.rest.router.ApiRouteMatcher;
 import org.forgerock.openam.utils.Config;
+import org.forgerock.services.context.Context;
+import org.forgerock.services.routing.RouteMatch;
+import org.forgerock.services.routing.RouteMatcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -171,12 +177,63 @@ public class RestGuiceModule extends AbstractModule {
             @Named("ChfRealmRouter") org.forgerock.http.routing.Router chfRealmRouter,
             RealmContextFilter realmContextFilter, RealmRoutingFactory realmRoutingFactory) {
         org.forgerock.http.routing.Router chfRootRouter = new org.forgerock.http.routing.Router();
-        chfRootRouter.addRoute(requestUriMatcher(STARTS_WITH, REALM_ROUTE),
+        chfRootRouter.addRoute(realmRouteMatcher(),
                 Handlers.chainOf(realmRoutingFactory.createRouter(chfRootRouter),
                         realmRoutingFactory.createHostnameFilter()));
 
         chfRootRouter.setDefaultRoute(Handlers.chainOf(chfRealmRouter, realmContextFilter));
         return chfRootRouter;
+    }
+
+    private RouteMatcher<Request> realmRouteMatcher() {
+        final RouteMatcher<Request> requestRouteMatcher = requestUriMatcher(STARTS_WITH, REALM_ROUTE);
+        return new RouteMatcher<Request>() {
+            @Override
+            public RouteMatch evaluate(Context context, Request request) {
+                RouteMatch routeMatch = requestRouteMatcher.evaluate(context, request);
+                if (routeMatch != null && routeMatch.decorateContext(context).asContext(UriRouterContext.class)
+                        .getRemainingUri().isEmpty()) {
+                    return new RouteMatch() {
+                        @Override
+                        public boolean isBetterMatchThan(RouteMatch result) {
+                            return false;
+                        }
+
+                        @Override
+                        public Context decorateContext(Context context) {
+                            return context;
+                        }
+                    };
+                } else {
+                    return routeMatch;
+                }
+            }
+
+            @Override
+            public String toString() {
+                return requestRouteMatcher.toString();
+            }
+
+            @Override
+            public String idFragment() {
+                return requestRouteMatcher.idFragment();
+            }
+
+            @Override
+            public int hashCode() {
+                return requestRouteMatcher.hashCode();
+            }
+
+            @Override
+            public boolean equals(Object o) {
+                return requestRouteMatcher.equals(o);
+            }
+
+            @Override
+            public <D> D transformApi(D descriptor, ApiProducer<D> producer) {
+                return requestRouteMatcher.transformApi(descriptor, producer);
+            }
+        };
     }
 
     @Provides

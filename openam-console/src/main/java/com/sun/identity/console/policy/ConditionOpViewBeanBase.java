@@ -24,10 +24,7 @@
  *
  * $Id: ConditionOpViewBeanBase.java,v 1.5 2009/12/01 20:41:43 veiming Exp $
  *
- */
-
-/*
- * Portions Copyrighted 2011 ForgeRock AS
+ * Portions Copyrighted 2011-2016 ForgeRock AS.
  */
 
 package com.sun.identity.console.policy;
@@ -330,7 +327,6 @@ public abstract class ConditionOpViewBeanBase
         String cacheID = (String)getPageSessionAttribute(
             ProfileViewBeanBase.PG_SESSION_POLICY_CACHE_ID);
         if (cacheID != null) {
-            PolicyCache cache = PolicyCache.getInstance();
             PolicyModel model = (PolicyModel)getModel();
             policy = model.getCachedPolicy(cacheID);
         }

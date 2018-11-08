@@ -24,7 +24,7 @@
  *
  * $Id: AttributeSchema.java,v 1.13 2009/01/13 06:56:08 mahesh_prasad_r Exp $
  *
- * Portions Copyrighted 2014-2016 ForgeRock AS.
+ * Portions Copyrighted 2014-2017 ForgeRock AS.
  */
 
 package com.sun.identity.sm;

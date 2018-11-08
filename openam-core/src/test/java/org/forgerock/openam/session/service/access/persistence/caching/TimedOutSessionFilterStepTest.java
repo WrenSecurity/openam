@@ -142,18 +142,6 @@ public class TimedOutSessionFilterStepTest {
     }
 
     @Test
-    public void shouldStillReturnSessionsThatHaveNotTimedOutWithWillExpireTurnedOn() throws SessionPersistenceException {
-
-        // if
-        when(notTimedOutSession.willExpire()).thenReturn(false);
-        // when
-        final InternalSession byHandleWithWillExpireOn = testClass.getByHandle(NOT_TIMED_OUT_SESSSION_ID, mockNextStep);
-        // then
-        assertNotNull(byHandleWithWillExpireOn, "TimeOutSessionFilterStep.getByHandle " +
-                "failed to get a non timed out session - will expire is on but session should not be expired");
-    }
-
-    @Test
     public void shouldStillReturnSessionsThatHaveNotTimedOutWithTimeleftOf0AndWillExpireTurnedOff() throws SessionPersistenceException {
 
         // if
@@ -164,19 +152,6 @@ public class TimedOutSessionFilterStepTest {
         assertNotNull(byHandleWithWillExpireOn, "TimeOutSessionFilterStep.getByHandle " +
                 "failed to get a non timed out session - time left is 0 but will expire is off");
 
-    }
-
-    @Test
-    public void shouldNotReturnSessionsIfWillExpireIsOnAndTheTimeleftIs0() throws SessionPersistenceException {
-
-        // if
-        when(notTimedOutSession.willExpire()).thenReturn(true);
-        when(notTimedOutSession.getTimeLeft()).thenReturn(0L);
-        // when
-        final InternalSession byHandleWithWillExpireOn = testClass.getByHandle(NOT_TIMED_OUT_SESSSION_ID, mockNextStep);
-        // then
-        assertNull(byHandleWithWillExpireOn, "TimeOutSessionFilterStep.getByHandle " +
-                "failed to filter a session - will expire is on, time left is 0");
     }
 
     @Test
@@ -204,19 +179,6 @@ public class TimedOutSessionFilterStepTest {
         // then
         assertNull(byHandleWithWillExpireOnAndMaxIdleLessThanIdle, "TimeOutSessionFilterStep.getByHandle " +
                 "failed to filter a session - will expire on, max idle < current idle");
-    }
-
-    @Test
-    public void shouldNotReturnSessionsThatHavebeenSetToTimedOut() throws SessionPersistenceException {
-
-        // if
-        when(notTimedOutSession.willExpire()).thenReturn(true);
-        when(notTimedOutSession.isTimedOut()).thenReturn(true);
-        // when
-        final InternalSession byHandleWithWillExpireOffAndMaxIdleLessThanIdle = testClass.getByHandle(NOT_TIMED_OUT_SESSSION_ID, mockNextStep);
-        // then
-        assertNull(byHandleWithWillExpireOffAndMaxIdleLessThanIdle, "TimeOutSessionFilterStep.getByHandle " +
-                "failed to filter out session - timed out set to true");
     }
 
     @Test

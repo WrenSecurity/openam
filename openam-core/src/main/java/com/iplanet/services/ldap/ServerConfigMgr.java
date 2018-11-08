@@ -26,8 +26,8 @@
  *
  */
 
-/**
- * Portions Copyrighted 2011-2015 ForgeRock AS.
+/*
+ * Portions Copyrighted 2011-2017 ForgeRock AS.
  */
 package com.iplanet.services.ldap;
 

@@ -27,7 +27,7 @@
  */
 
 /*
- * Portions Copyrighted [2010] [ForgeRock AS]
+ * Portions Copyrighted 2010-2017 ForgeRock AS.
  */
 package com.sun.identity.install.tools.launch;
 
